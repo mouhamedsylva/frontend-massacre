@@ -1,0 +1,65 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "accessibility": {
+    "skip_to_text": "Passer au contenu",
+    "refresh_page": "Le choix d'une sélection entraîne l'actualisation de la page entière.",
+    "link_messages": {
+      "new_window": "S'ouvre dans une nouvelle fenêtre."
+    }
+  },
+  "general": {
+    "configurateur": {
+      "main_title": "Créez votre produit personnalisé",
+      "description": "Sélectionnez un produit et uploadez votre design sur les différentes faces.",
+      "select_product": "Personnaliser ce produit",
+      "back_to_products": "← Retour aux produits"
+    },
+    "views": {
+      "front": "Face",
+      "back": "Dos",
+      "left": "Gauche",
+      "right": "Droite"
+    },
+    "controls": {
+      "add_design": "Ajouter votre design",
+      "upload_text": "Cliquez ou glissez-déposez une image",
+      "upload_hint": "PNG ou JPEG, max 5 Mo",
+      "delete_selected": "Supprimer la sélection",
+      "clear_view": "Effacer cette vue",
+      "help_title": "Aide",
+      "help_move": "Glissez pour déplacer votre design",
+      "help_resize": "Redimensionnez avec les poignées",
+      "help_rotate": "Faites pivoter avec la poignée du haut",
+      "help_clip": "Les éléments hors zone seront masqués"
+    },
+    "form": {
+      "title": "Demander votre devis personnalisé",
+      "first_name": "Prénom",
+      "last_name": "Nom",
+      "email": "Email",
+      "submit": "Envoyer ma demande de devis",
+      "disclaimer": "Notre équipe vérifiera votre design et vous enverra un devis personnalisé sous 24–48h."
+    },
+    "messages": {
+      "loading": "Chargement...",
+      "submitting": "Envoi en cours...",
+      "success_title": "Demande envoyée avec succès !",
+      "success_message": "Votre demande de devis a bien été reçue. Notre équipe vous contactera sous 24–48h.",
+      "error_title": "Erreur lors de l'envoi",
+      "error_network": "Impossible de contacter le serveur. Vérifiez votre connexion internet et réessayez.",
+      "error_no_design": "Veuillez ajouter au moins un design sur une vue avant de soumettre votre demande.",
+      "error_invalid_file": "Format de fichier non accepté. Utilisez PNG ou JPEG.",
+      "error_file_too_large": "Le fichier est trop volumineux. Maximum 5 Mo.",
+      "confirm_back": "Êtes-vous sûr de vouloir quitter ? Vos modifications seront perdues.",
+      "confirm_clear": "Êtes-vous sûr de vouloir effacer tous les designs de cette vue ?"
+    }
+  }
+}

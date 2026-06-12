@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Configurateur - Mode Hors Ligne</title>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/configurateur.css">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .test-banner {
+      background: #ff0000;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    /* Fallback si les images ne chargent pas */
+    .product-card-image {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="test-banner">
+    ⚠️ MODE TEST HORS LIGNE - Images intégrées (fonctionne sans connexion)
+  </div>
+
+  <!-- Contenu du configurateur -->
+  <div class="configurateur-container" id="configurateur-app">
+    
+    <!-- 1. SÉLECTEUR DE PRODUIT -->
+    <section class="configurateur-section configurateur-product-selector">
+      <h1 class="configurateur-title">Créez votre produit personnalisé</h1>
+      <p class="configurateur-description">Sélectionnez un produit et uploadez votre design sur les différentes faces.</p>
+      
+      <div class="product-selector-grid">
+        
+        <!-- Produit de test 1 : T-Shirt avec images SVG inline -->
+        <div class="product-card" 
+             data-product-id="test-001"
+             data-product-title="T-Shirt Customisé Massacre"
+             data-view-front="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23000' width='800' height='600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='48' fill='%23fff'%3EFACE%3C/text%3E%3C/svg%3E"
+             data-view-back="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23000' width='800' height='600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='48' fill='%23fff'%3EDOS%3C/text%3E%3C/svg%3E"
+             data-view-left="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23000' width='800' height='600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='48' fill='%23fff'%3EGAUCHE%3C/text%3E%3C/svg%3E"
+             data-view-right="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23000' width='800' height='600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='48' fill='%23fff'%3EDROITE%3C/text%3E%3C/svg%3E"
+             data-editable-zones='{"front":{"x":200,"y":150,"w":400,"h":500},"back":{"x":200,"y":150,"w":400,"h":500},"left":{"x":100,"y":200,"w":150,"h":150},"right":{"x":100,"y":200,"w":150,"h":150}}'>
+          
+          <div class="product-card-image" style="background: linear-gradient(135deg, #000 0%, #333 100%);">
+            👕
+          </div>
+          
+          <h3 class="product-card-title">T-Shirt Massacre</h3>
+          <p class="product-card-description">T-shirt noir 100% coton, personnalisable sur toutes les faces.</p>
+          
+          <button class="btn btn-select-product" type="button">
+            Personnaliser ce produit
+          </button>
+        </div>
+
+        <!-- Produit de test 2 : Badge -->
+        <div class="product-card" 
+             data-product-id="test-002"
+             data-product-title="Badge Customisé Massacre"
+             data-view-front="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23fff' width='800' height='600'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='48' fill='%23000'%3EBADGE FACE%3C/text%3E%3C/svg%3E"
+             data-view-back=""
+             data-view-left=""
+             data-view-right=""
+             data-editable-zones='{"front":{"x":250,"y":200,"w":300,"h":200}}'>
+          
+          <div class="product-card-image" style="background: linear-gradient(135deg, #fff 0%, #eee 100%);">
+            🎯
+          </div>
+          
+          <h3 class="product-card-title">Badge Massacre</h3>
+          <p class="product-card-description">Badge rond 5cm, personnalisable sur la face avant.</p>
+          
+          <button class="btn btn-select-product" type="button">
+            Personnaliser ce produit
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. INTERFACE DE CUSTOMISATION -->
+    <section class="configurateur-section configurateur-editor" id="editor-section" style="display: none;">
+      
+      <div class="editor-header">
+        <button class="btn btn-back" id="btn-back-to-products" type="button">
+          ← Retour aux produits
+        </button>
+        <h2 class="editor-product-title" id="selected-product-title">Produit sélectionné</h2>
+      </div>
+
+      <div class="editor-layout">
+        
+        <!-- Sélecteur de vues -->
+        <div class="view-selector">
+          <button class="view-tab active" data-view="front" type="button">
+            <span class="view-icon">👕</span>
+            <span class="view-label">Face</span>
+          </button>
+          <button class="view-tab" data-view="back" type="button">
+            <span class="view-icon">👕</span>
+            <span class="view-label">Dos</span>
+          </button>
+          <button class="view-tab" data-view="left" type="button">
+            <span class="view-icon">👕</span>
+            <span class="view-label">Gauche</span>
+          </button>
+          <button class="view-tab" data-view="right" type="button">
+            <span class="view-icon">👕</span>
+            <span class="view-label">Droite</span>
+          </button>
+        </div>
+
+        <div class="editor-main">
+          
+          <!-- Canvas Fabric.js -->
+          <div class="canvas-wrapper">
+            <canvas id="customization-canvas"></canvas>
+            <div class="canvas-loader" id="canvas-loader" style="display: none;">
+              <div class="spinner"></div>
+              <p>Chargement...</p>
+            </div>
+          </div>
+
+          <!-- Panneau de contrôle -->
+          <div class="controls-panel">
+            
+            <div class="control-group" id="group-upload">
+              <h3 class="control-title">📷 Ajouter votre design</h3>
+              <div class="control-content">
+                <div class="upload-zone" id="upload-zone">
+                  <input type="file" 
+                         id="image-upload-input" 
+                         accept="image/png,image/jpeg,image/jpg"
+                         style="display: none;">
+                  
+                  <label for="image-upload-input" class="upload-label">
+                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span class="upload-text">Cliquez ou glissez-déposez une image</span>
+                    <span class="upload-hint">PNG ou JPEG, max 5 Mo</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group is-collapsed" id="group-actions">
+              <h3 class="control-title">🎨 Actions</h3>
+              <div class="control-content">
+                <button class="btn btn-secondary btn-full" id="btn-delete-selected" type="button" disabled style="margin-bottom: 0.5rem;">
+                  🗑️ Supprimer la sélection
+                </button>
+                
+                <button class="btn btn-secondary btn-full" id="btn-clear-view" type="button">
+                  🧹 Effacer cette vue
+                </button>
+              </div>
+            </div>
+
+            <div class="control-group is-collapsed" id="group-help">
+              <h3 class="control-title">ℹ️ Aide</h3>
+              <div class="control-content">
+                <ul class="help-list">
+                  <li>Glissez pour déplacer votre design</li>
+                  <li>Redimensionnez avec les poignées</li>
+                  <li>Faites pivoter avec la poignée du haut</li>
+                  <li>Les éléments hors zone seront masqués</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Formulaire de soumission -->
+        <div class="submission-section">
+          <h3 class="submission-title">💬 Demander votre devis personnalisé</h3>
+          
+          <form id="devis-form" class="devis-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="customer-firstname" class="form-label">Prénom *</label>
+                <input type="text" 
+                       id="customer-firstname" 
+                       name="first_name" 
+                       class="form-input" 
+                       required 
+                       value="Test"
+                       autocomplete="given-name">
+              </div>
+              
+              <div class="form-group">
+                <label for="customer-lastname" class="form-label">Nom *</label>
+                <input type="text" 
+                       id="customer-lastname" 
+                       name="last_name" 
+                       class="form-input" 
+                       required 
+                       value="Utilisateur"
+                       autocomplete="family-name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="customer-email" class="form-label">Email *</label>
+              <input type="email" 
+                     id="customer-email" 
+                     name="email" 
+                     class="form-input" 
+                     required 
+                     value="test@exemple.com"
+                     autocomplete="email">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-full" id="btn-submit-devis">
+                ✉️ Envoyer ma demande de devis
+              </button>
+            </div>
+
+            <p class="form-disclaimer">
+              Notre équipe vérifiera votre design et vous enverra un devis personnalisé sous 24–48h.
+            </p>
+          </form>
+
+          <div class="submission-feedback" id="submission-feedback" style="display: none;"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+  <script src="assets/configurateur.js"></script>
+  <script src="assets/configurateur-phase1.js"></script>
+  <script src="assets/configurateur-phase2.js"></script>
+
+</body>
+</html>

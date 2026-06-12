@@ -1,0 +1,16 @@
+{
+  "sections": {
+    "main": {
+      "type": "configurateur",
+      "blocks": {},
+      "block_order": [],
+      "settings": {
+        "main_title": "Créez votre produit personnalisé",
+        "description": "Sélectionnez un produit et uploadez votre design sur les différentes faces."
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

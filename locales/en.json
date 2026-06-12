@@ -1,0 +1,65 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "accessibility": {
+    "skip_to_text": "Skip to content",
+    "refresh_page": "Choosing a selection results in a full page refresh.",
+    "link_messages": {
+      "new_window": "Opens in a new window."
+    }
+  },
+  "general": {
+    "configurateur": {
+      "main_title": "Create Your Custom Product",
+      "description": "Select a product and upload your design on different sides.",
+      "select_product": "Customize This Product",
+      "back_to_products": "← Back to Products"
+    },
+    "views": {
+      "front": "Front",
+      "back": "Back",
+      "left": "Left",
+      "right": "Right"
+    },
+    "controls": {
+      "add_design": "Add Your Design",
+      "upload_text": "Click or drag and drop an image",
+      "upload_hint": "PNG or JPEG, max 5 MB",
+      "delete_selected": "Delete Selection",
+      "clear_view": "Clear This View",
+      "help_title": "Help",
+      "help_move": "Drag to move your design",
+      "help_resize": "Resize using handles",
+      "help_rotate": "Rotate using the top handle",
+      "help_clip": "Elements outside the zone will be masked"
+    },
+    "form": {
+      "title": "Request Your Custom Quote",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "submit": "Send My Quote Request",
+      "disclaimer": "Our team will review your design and send you a personalized quote within 24–48 hours."
+    },
+    "messages": {
+      "loading": "Loading...",
+      "submitting": "Sending...",
+      "success_title": "Request Sent Successfully!",
+      "success_message": "Your quote request has been received. Our team will contact you within 24–48 hours.",
+      "error_title": "Sending Error",
+      "error_network": "Unable to contact the server. Check your internet connection and try again.",
+      "error_no_design": "Please add at least one design on a view before submitting your request.",
+      "error_invalid_file": "Invalid file format. Use PNG or JPEG.",
+      "error_file_too_large": "File is too large. Maximum 5 MB.",
+      "confirm_back": "Are you sure you want to leave? Your changes will be lost.",
+      "confirm_clear": "Are you sure you want to clear all designs from this view?"
+    }
+  }
+}

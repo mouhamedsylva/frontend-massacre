@@ -1,0 +1,286 @@
+{% comment %}
+  Section : configurateur.liquid
+  Section principale du module de customisation multi-vues
+  
+  Metafields utilisés pour chaque produit :
+  - product.metafields.custom.view_front_image : Image de la vue Face
+  - product.metafields.custom.view_back_image : Image de la vue Dos
+  - product.metafields.custom.view_left_image : Image de la vue Gauche
+  - product.metafields.custom.view_right_image : Image de la vue Droite
+  - product.metafields.custom.editable_zones : JSON avec les coordonnées des zones éditables
+{% endcomment %}
+
+{{ 'configurateur.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'fabric.min.js' | asset_url }}" defer></script>
+<script src="{{ 'configurateur.js' | asset_url }}" defer></script>
+<script src="{{ 'configurateur-phase1.js' | asset_url }}" defer></script>
+<script src="{{ 'configurateur-phase2.js' | asset_url }}" defer></script>
+
+<div class="configurateur-container" id="configurateur-app">
+  
+  {%- comment -%} ══════════════════════════════════════════════════════════════
+    1. SÉLECTEUR DE PRODUIT
+  ══════════════════════════════════════════════════════════════ {%- endcomment -%}
+  <section class="configurateur-section configurateur-product-selector">
+    <h1 class="configurateur-title">{{ section.settings.main_title | default: "Créez votre produit personnalisé" }}</h1>
+    <p class="configurateur-description">{{ section.settings.description | default: "Sélectionnez un produit et uploadez votre design sur les différentes faces." }}</p>
+    
+    <div class="product-selector-grid">
+      {% for block in section.blocks %}
+        {% if block.type == 'product' %}
+          {% assign product = block.settings.product %}
+          {% if product %}
+            {%- comment -%}
+              Pour les metafields de type "Single line text" (URL externe),
+              utiliser directement .value — le filtre image_url est réservé aux types File/Image.
+            {%- endcomment -%}
+            {%- assign front_image = product.metafields.custom.image_front.value -%}
+            {%- assign back_image  = product.metafields.custom.image_back.value -%}
+            {%- assign left_image  = product.metafields.custom.image_left.value -%}
+            {%- assign right_image = product.metafields.custom.image_right.value -%}
+
+            <div class="product-card" 
+                 data-product-id="{{ product.id }}"
+                 data-product-title="{{ product.title | escape }}"
+                 data-view-front="{{ front_image }}"
+                 data-view-back="{{ back_image }}"
+                 data-view-left="{{ left_image }}"
+                 data-view-right="{{ right_image }}"
+                 data-editable-zones="{{ product.metafields.custom.editable_zones | escape }}">
+              
+              {% if product.featured_image %}
+                <img src="{{ product.featured_image | image_url: width: 300 }}" 
+                     alt="{{ product.title }}"
+                     width="300"
+                     height="300"
+                     class="product-card-image"
+                     loading="lazy">
+              {% endif %}
+              
+              <h3 class="product-card-title">{{ product.title }}</h3>
+              
+              {% if product.description %}
+                <p class="product-card-description">{{ product.description | strip_html | truncate: 80 }}</p>
+              {% endif %}
+              
+              <button class="btn btn-select-product" type="button">
+                Personnaliser ce produit
+              </button>
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  {%- comment -%} ══════════════════════════════════════════════════════════════
+    2. INTERFACE DE CUSTOMISATION (Masquée par défaut)
+  ══════════════════════════════════════════════════════════════ {%- endcomment -%}
+  <section class="configurateur-section configurateur-editor" id="editor-section" style="display: none;">
+    
+    <div class="editor-header">
+      <button class="btn btn-back" id="btn-back-to-products" type="button">
+        ← Retour aux produits
+      </button>
+      <h2 class="editor-product-title" id="selected-product-title">Produit sélectionné</h2>
+    </div>
+
+    <div class="editor-layout">
+      
+      {%- comment -%} ────────────────────────────────────────────────────────
+        2.1 SÉLECTEUR DE VUES (4 onglets)
+      ──────────────────────────────────────────────────────────── {%- endcomment -%}
+      <div class="view-selector">
+        <button class="view-tab active" data-view="front" type="button">
+          <span class="view-icon">👕</span>
+          <span class="view-label">Face</span>
+        </button>
+        <button class="view-tab" data-view="back" type="button">
+          <span class="view-icon">👕</span>
+          <span class="view-label">Dos</span>
+        </button>
+        <button class="view-tab" data-view="left" type="button">
+          <span class="view-icon">👕</span>
+          <span class="view-label">Gauche</span>
+        </button>
+        <button class="view-tab" data-view="right" type="button">
+          <span class="view-icon">👕</span>
+          <span class="view-label">Droite</span>
+        </button>
+      </div>
+
+      <div class="editor-main">
+        
+        {%- comment -%} ────────────────────────────────────────────────────
+          2.2 CANVAS FABRIC.JS
+        ──────────────────────────────────────────────────────────── {%- endcomment -%}
+        <div class="canvas-wrapper">
+          <canvas id="customization-canvas"></canvas>
+          <div class="canvas-loader" id="canvas-loader" style="display: none;">
+            <div class="spinner"></div>
+            <p>Chargement...</p>
+          </div>
+        </div>
+
+        {%- comment -%} ────────────────────────────────────────────────────
+          2.3 PANNEAU DE CONTRÔLE
+        ──────────────────────────────────────────────────────────── {%- endcomment -%}
+        <div class="controls-panel">
+          
+          <div class="control-group" id="group-upload">
+            <h3 class="control-title">📷 Ajouter votre design</h3>
+            <div class="control-content">
+              <div class="upload-zone" id="upload-zone">
+                <input type="file" 
+                       id="image-upload-input" 
+                       accept="image/png,image/jpeg,image/jpg"
+                       style="display: none;">
+                
+                <label for="image-upload-input" class="upload-label">
+                  <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span class="upload-text">Cliquez ou glissez-déposez une image</span>
+                  <span class="upload-hint">PNG ou JPEG, max 5 Mo</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group is-collapsed" id="group-actions">
+            <h3 class="control-title">🎨 Actions</h3>
+            <div class="control-content">
+              <button class="btn btn-secondary btn-full" id="btn-delete-selected" type="button" disabled style="margin-bottom: 0.5rem;">
+                🗑️ Supprimer la sélection
+              </button>
+              
+              <button class="btn btn-secondary btn-full" id="btn-clear-view" type="button">
+                🧹 Effacer cette vue
+              </button>
+            </div>
+          </div>
+
+          <div class="control-group is-collapsed" id="group-help">
+            <h3 class="control-title">ℹ️ Aide</h3>
+            <div class="control-content">
+              <ul class="help-list">
+                <li>Glissez pour déplacer votre design</li>
+                <li>Redimensionnez avec les poignées</li>
+                <li>Faites pivoter avec la poignée du haut</li>
+                <li>Les éléments hors zone seront masqués</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <script>
+        window.CONFIGURATEUR_CONFIG = {
+          apiEndpoint: {{ settings.microservice_api_url | json }},
+          debugMode: {{ settings.enable_debug_mode | json }}
+        };
+      </script>
+
+      {%- comment -%} ────────────────────────────────────────────────────────
+        2.4 FORMULAIRE DE SOUMISSION
+      ──────────────────────────────────────────────────────────── {%- endcomment -%}
+      <div class="submission-section">
+        <h3 class="submission-title">💬 Demander votre devis personnalisé</h3>
+        
+        <form id="devis-form" class="devis-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="customer-firstname" class="form-label">Prénom *</label>
+              <input type="text" 
+                     id="customer-firstname" 
+                     name="first_name" 
+                     class="form-input" 
+                     required 
+                     autocomplete="given-name">
+            </div>
+            
+            <div class="form-group">
+              <label for="customer-lastname" class="form-label">Nom *</label>
+              <input type="text" 
+                     id="customer-lastname" 
+                     name="last_name" 
+                     class="form-input" 
+                     required 
+                     autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="customer-email" class="form-label">Email *</label>
+            <input type="email" 
+                   id="customer-email" 
+                   name="email" 
+                   class="form-input" 
+                   required 
+                   autocomplete="email">
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-full" id="btn-submit-devis">
+              ✉️ Envoyer ma demande de devis
+            </button>
+          </div>
+
+          <p class="form-disclaimer">
+            Notre équipe vérifiera votre design et vous enverra un devis personnalisé sous 24–48h.
+          </p>
+        </form>
+
+        <div class="submission-feedback" id="submission-feedback" style="display: none;"></div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+{%- comment -%} ══════════════════════════════════════════════════════════════
+  CONFIGURATION DU SCHEMA (Paramètres éditables dans le Theme Editor)
+══════════════════════════════════════════════════════════════ {%- endcomment -%}
+
+{% schema %}
+{
+  "name": "Configurateur",
+  "settings": [
+    {
+      "type": "text",
+      "id": "main_title",
+      "label": "Titre principal",
+      "default": "Créez votre produit personnalisé"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Sélectionnez un produit et uploadez votre design sur les différentes faces."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Produit personnalisable",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Produit Shopify"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Configurateur",
+      "blocks": []
+    }
+  ]
+}
+{% endschema %}

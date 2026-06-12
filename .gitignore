@@ -1,0 +1,38 @@
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Node modules (si build tools)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+
+# Shopify
+.shopify/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.backup
+*.bak
+*~

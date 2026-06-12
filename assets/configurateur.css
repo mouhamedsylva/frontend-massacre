@@ -1,0 +1,617 @@
+/**
+ * configurateur.css
+ * Styles pour le module de customisation multi-vues Massacre Officiel
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESET & VARIABLES
+══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --color-primary: #000000;
+  --color-secondary: #333333;
+  --color-accent: #ff0000;
+  --color-text: #1a1a1a;
+  --color-text-light: #666666;
+  --color-border: #e0e0e0;
+  --color-bg: #ffffff;
+  --color-bg-light: #f8f8f8;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  
+  --border-radius: 8px;
+  --border-radius-sm: 4px;
+  
+  --transition: all 0.25s ease;
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.configurateur-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--color-text);
+}
+
+.configurateur-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   1. SÉLECTEUR DE PRODUIT
+══════════════════════════════════════════════════════════════════════════════ */
+
+.configurateur-product-selector {
+  text-align: center;
+}
+
+.configurateur-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-primary);
+}
+
+.configurateur-description {
+  font-size: 1.125rem;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.product-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+}
+
+.product-card {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  transition: var(--transition);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.product-card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+}
+
+.product-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-primary);
+}
+
+.product-card-description {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   2. BOUTONS
+══════════════════════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  line-height: 1;
+  gap: 0.5rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.btn-select-product {
+  width: 100%;
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-back {
+  background: transparent;
+  color: var(--color-text);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-back:hover {
+  background: var(--color-bg-light);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   3. INTERFACE D'ÉDITION
+══════════════════════════════════════════════════════════════════════════════ */
+
+.configurateur-editor {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.editor-product-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   4. SÉLECTEUR DE VUES (Onglets)
+══════════════════════════════════════════════════════════════════════════════ */
+
+.view-selector {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  background: var(--color-bg-light);
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+  overflow-x: auto;
+}
+
+.view-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 100px;
+}
+
+.view-tab:hover {
+  background: white;
+}
+
+.view-tab.active {
+  background: white;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.view-icon {
+  font-size: 1.5rem;
+}
+
+.view-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.view-tab.active .view-label {
+  color: var(--color-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   5. LAYOUT PRINCIPAL ÉDITEUR
+══════════════════════════════════════════════════════════════════════════════ */
+
+.editor-main {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 1024px) {
+  .editor-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   6. CANVAS FABRIC.JS
+══════════════════════════════════════════════════════════════════════════════ */
+
+.canvas-wrapper {
+  position: relative;
+  background: var(--color-bg-light);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px; /* Réduit pour être moins haut */
+}
+
+#customization-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 400px; /* Réduit pour être moins haut */
+}
+
+.canvas-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  z-index: 10;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   7. PANNEAU DE CONTRÔLE
+══════════════════════════════════════════════════════════════════════════════ */
+
+.controls-panel {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0 var(--spacing-md); /* Ajusté pour les collapses */
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.control-group {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0;
+}
+
+.control-group:last-child {
+  border-bottom: none;
+}
+
+.control-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  padding: var(--spacing-md) 0;
+  color: var(--color-primary);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.control-title::after {
+  content: '▼';
+  font-size: 0.75rem;
+  transition: transform 0.3s ease;
+  color: var(--color-text-light);
+}
+
+.control-group.is-collapsed .control-title::after {
+  transform: rotate(-90deg);
+}
+
+.control-content {
+  max-height: 2000px;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0, 1, 0, 1), opacity 0.3s ease, padding 0.3s ease;
+  padding-bottom: var(--spacing-md);
+  opacity: 1;
+}
+
+.control-group.is-collapsed .control-content {
+  max-height: 0;
+  opacity: 0;
+  padding-bottom: 0;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   8. ZONE D'UPLOAD
+══════════════════════════════════════════════════════════════════════════════ */
+
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: var(--transition);
+  background: var(--color-bg-light);
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--color-primary);
+  background: white;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-text-light);
+}
+
+.upload-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.upload-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   9. LISTE D'AIDE
+══════════════════════════════════════════════════════════════════════════════ */
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.help-list li {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.help-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   10. FORMULAIRE DE DEVIS
+══════════════════════════════════════════════════════════════════════════════ */
+
+.submission-section {
+  background: var(--color-bg-light);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+}
+
+.submission-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-primary);
+}
+
+.devis-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.form-input {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  transition: var(--transition);
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.form-actions {
+  margin-top: var(--spacing-sm);
+}
+
+.form-disclaimer {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  text-align: center;
+  margin-top: var(--spacing-sm);
+  margin-bottom: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   11. FEEDBACK DE SOUMISSION
+══════════════════════════════════════════════════════════════════════════════ */
+
+.submission-feedback {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin-top: var(--spacing-md);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.submission-feedback.success {
+  background: #dcfce7;
+  border: 2px solid var(--color-success);
+  color: #166534;
+}
+
+.submission-feedback.error {
+  background: #fee2e2;
+  border: 2px solid var(--color-error);
+  color: #991b1b;
+}
+
+.submission-feedback h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.submission-feedback p {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.submission-feedback ul {
+  margin: var(--spacing-xs) 0 0 0;
+  padding-left: 1.25rem;
+}
+
+.submission-feedback li {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   12. RESPONSIVE
+══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .configurateur-container {
+    padding: var(--spacing-md);
+  }
+  
+  .configurateur-title {
+    font-size: 1.75rem;
+  }
+  
+  .editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .canvas-wrapper {
+    min-height: 300px; /* Proportions réduites sur mobile */
+  }
+}

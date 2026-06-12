@@ -1,0 +1,33 @@
+# Fichiers à ignorer lors du push avec Shopify CLI
+
+# Documentation
+README.md
+INSTALLATION.md
+*.md
+
+# Configuration locale
+.env
+.env.local
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.log
+
+# Git
+.git
+.gitignore
+
+# Node modules (si utilisé pour build)
+node_modules/
+package.json
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Scripts locaux
+push.bat

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Page Configurateur</title>
+  <link rel="stylesheet" href="assets/configurateur.css">
+</head>
+<body>
+  
+  <!-- Simuler la structure de la page Shopify -->
+  <a class="skip-to-content-link" href="#MainContent">Skip to content</a>
+
+  <main id="MainContent">
+    
+    <!-- La section configurateur -->
+    <div class="configurateur-wrapper">
+      <div id="shopify-section-configurateur" class="shopify-section">
+        <!-- Le contenu sera injecté par configurateur.liquid via JavaScript -->
+        <section class="configurateur-section configurateur-product-selector">
+          <h1 class="configurateur-title">Créez votre produit personnalisé</h1>
+          <p class="configurateur-description">Sélectionnez un produit et uploadez votre design sur les différentes faces.</p>
+          
+          <div class="product-selector-grid">
+            <!-- Les produits s'afficheront ici -->
+            <p style="text-align: center; padding: 40px; color: #666;">
+              Pour voir les produits, il faut d'abord configurer les Metafields et créer des produits dans Shopify Admin.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Scripts nécessaires -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+  <script src="assets/configurateur.js"></script>
+  <script src="assets/configurateur-phase1.js"></script>
+  <script src="assets/configurateur-phase2.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,123 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "configurateur",
+      "blocks": {
+        "product_jxqNJb": {
+          "type": "product",
+          "settings": {
+            "product": "the-3p-fulfilled-snowboard"
+          }
+        },
+        "product_87Bngz": {
+          "type": "product",
+          "settings": {
+            "product": "the-collection-snowboard-hydrogen"
+          }
+        },
+        "product_VCDYbU": {
+          "type": "product",
+          "settings": {
+            "product": "the-collection-snowboard-liquid"
+          }
+        },
+        "product_9LmfWb": {
+          "type": "product",
+          "settings": {
+            "product": "the-collection-snowboard-oxygen"
+          }
+        },
+        "product_krxW8c": {
+          "type": "product",
+          "settings": {
+            "product": "the-compare-at-price-snowboard"
+          }
+        },
+        "product_dkkzfG": {
+          "type": "product",
+          "settings": {
+            "product": "the-inventory-not-tracked-snowboard"
+          }
+        }
+      },
+      "block_order": [
+        "product_jxqNJb",
+        "product_87Bngz",
+        "product_VCDYbU",
+        "product_9LmfWb",
+        "product_krxW8c",
+        "product_dkkzfG"
+      ],
+      "settings": {
+        "main_title": "Créez votre produit personnalisé",
+        "description": "Sélectionnez un produit et uploadez votre design sur les différentes faces."
+      }
+    },
+    "configurateur_Ft4Exc": {
+      "type": "configurateur",
+      "blocks": {
+        "product_FhKzxW": {
+          "type": "product",
+          "settings": {
+            "product": "the-3p-fulfilled-snowboard"
+          }
+        },
+        "product_VdwEUQ": {
+          "type": "product",
+          "settings": {
+            "product": "the-collection-snowboard-hydrogen"
+          }
+        },
+        "product_fAkeMK": {
+          "type": "product",
+          "settings": {
+            "product": "the-collection-snowboard-liquid"
+          }
+        },
+        "product_Lb4rap": {
+          "type": "product",
+          "settings": {
+            "product": "the-collection-snowboard-oxygen"
+          }
+        },
+        "product_TUtgaf": {
+          "type": "product",
+          "settings": {
+            "product": "the-compare-at-price-snowboard"
+          }
+        },
+        "product_EW8Wik": {
+          "type": "product",
+          "settings": {
+            "product": "the-inventory-not-tracked-snowboard"
+          }
+        }
+      },
+      "block_order": [
+        "product_FhKzxW",
+        "product_VdwEUQ",
+        "product_fAkeMK",
+        "product_Lb4rap",
+        "product_TUtgaf",
+        "product_EW8Wik"
+      ],
+      "settings": {
+        "main_title": "Créez votre produit personnalisé",
+        "description": "Sélectionnez un produit et uploadez votre design sur les différentes faces."
+      }
+    }
+  },
+  "order": [
+    "main",
+    "configurateur_Ft4Exc"
+  ]
+}

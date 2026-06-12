@@ -1,0 +1,37 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Massacre Configurateur",
+    "theme_version": "1.0.0",
+    "theme_author": "SimplifyStack",
+    "theme_documentation_url": "https://massacre-officiel.com",
+    "theme_support_url": "https://massacre-officiel.com/support"
+  },
+  {
+    "name": "Configurateur",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Configuration du Configurateur"
+      },
+      {
+        "type": "paragraph",
+        "content": "Ces paramètres s'appliquent au module de customisation multi-vues."
+      },
+      {
+        "type": "text",
+        "id": "microservice_api_url",
+        "label": "URL de l'API Microservice",
+        "info": "URL de votre microservice déployé (ex: https://votre-app.railway.app/api/submit-design)",
+        "default": "http://localhost:3000/api/submit-design"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_debug_mode",
+        "label": "Mode Debug",
+        "info": "Affiche des informations de débogage dans la console du navigateur",
+        "default": false
+      }
+    ]
+  }
+]
