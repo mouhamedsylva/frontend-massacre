@@ -14,6 +14,8 @@
 (function () {
   'use strict';
 
+  console.log('🚀 Configurateur Massacre V3.1 - Correctif Interactivité et Scaling Actif');
+
   // ══════════════════════════════════════════════════════════════════════════════
   // CONFIGURATION GLOBALE
   // Lue depuis window.CONFIGURATEUR_CONFIG injecté par configurateur.liquid
@@ -65,11 +67,23 @@
 
     // Zones éditables par vue (depuis les metafields Shopify)
     editableZones: {
-      front: { x: 150, y: 100, w: 500, h: 400 },
-      back:  { x: 150, y: 100, w: 500, h: 400 },
-      left:  { x: 150, y: 100, w: 500, h: 400 },
-      right: { x: 150, y: 100, w: 500, h: 400 },
+      front: [
+        { id: 'front-main',  label: 'Devant',          x: 180, y: 120, w: 440, h: 380 },
+        { id: 'front-chest', label: 'Poitrine Gauche',  x: 180, y: 120, w: 130, h: 110 },
+      ],
+      back:  [
+        { id: 'back-main',   label: 'Dos',              x: 180, y: 110, w: 440, h: 390 },
+      ],
+      left:  [
+        { id: 'left-sleeve', label: 'Manche Gauche',    x: 220, y: 160, w: 350, h: 280 },
+      ],
+      right: [
+        { id: 'right-sleeve',label: 'Manche Droite',    x: 220, y: 160, w: 350, h: 280 },
+      ],
     },
+
+    // Zone active sélectionnée par l'utilisateur
+    activeZone: 'front-main',
 
     // URLs des images de fond par vue
     viewImages: {
@@ -144,6 +158,184 @@
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
+  // CUSTOM CONTROLS — Icônes rondes aux 4 coins (supprimer / dupliquer / rotation / resize)
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  const CustomControls = {
+
+    // Cache des icônes pré-rendues (Image DOM) pour éviter de les recréer à chaque frame
+    _icons: {},
+
+    // Définition des icônes en SVG (data URI). Style cercles blancs avec bordure.
+    _svgIcons: {
+      delete: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="22" fill="#fff" stroke="#cccccc" stroke-width="2"/>
+          <circle cx="24" cy="24" r="18" fill="#ff3b30"/>
+          <path d="M17 17 L31 31 M31 17 L17 31" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+      rotate: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="22" fill="#fff" stroke="#cccccc" stroke-width="2"/>
+          <circle cx="24" cy="24" r="18" fill="#4A90E2"/>
+          <path d="M17 19 a 9 9 0 1 1 0 10" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M17 14 L17 21 L24 21 Z" fill="#fff"/>
+        </svg>`,
+      clone: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="22" fill="#fff" stroke="#cccccc" stroke-width="2"/>
+          <circle cx="24" cy="24" r="18" fill="#4A90E2"/>
+          <rect x="16" y="20" width="11" height="11" rx="2" fill="none" stroke="#fff" stroke-width="2.5"/>
+          <rect x="21" y="15" width="11" height="11" rx="2" fill="#4A90E2" stroke="#fff" stroke-width="2.5"/>
+        </svg>`,
+      resize: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="22" fill="#fff" stroke="#cccccc" stroke-width="2"/>
+          <circle cx="24" cy="24" r="18" fill="#4A90E2"/>
+          <path d="M18 30 L30 18 M30 18 L23 18 M30 18 L30 25 M18 30 L25 30 M18 30 L18 23"
+                stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>`,
+    },
+
+    // Précharge toutes les icônes en mémoire (Image objects) avant utilisation
+    preloadIcons() {
+      Object.keys(this._svgIcons).forEach((key) => {
+        const img = new Image();
+        img.src = 'data:image/svg+xml;base64,' + btoa(this._svgIcons[key]);
+        this._icons[key] = img;
+      });
+    },
+
+    // Fonction générique de rendu d'un contrôle "icône ronde"
+    renderIcon(iconKey) {
+      const icons = this._icons;
+      return function (ctx, left, top, styleOverride, fabricObject) {
+        const img = icons[iconKey];
+        const size = 32; // taille d'affichage augmentée pour plus de visibilité
+        ctx.save();
+        ctx.translate(left, top);
+        // Les contrôles resize/rotate suivent l'angle de l'objet ; delete/clone restent droits
+        if (iconKey === 'resize') {
+          ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        }
+        if (img && img.complete && img.naturalWidth > 0) {
+          ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        } else {
+          // Fallback si l'image n'est pas encore chargée : petit cercle gris
+          ctx.beginPath();
+          ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ccc';
+          ctx.fill();
+        }
+        ctx.restore();
+      };
+    },
+
+    // Action : supprime l'objet du canvas (délègue à CanvasManager pour rester cohérent
+    // avec le bouton "btn-delete-selected" déjà existant)
+    deleteObjectHandler(eventData, transform) {
+      const target = transform.target;
+      const canvas = target.canvas;
+      canvas.setActiveObject(target);
+      CanvasManager.deleteSelected();
+      return true;
+    },
+
+    // Action : duplique l'objet et sélectionne le clone
+    cloneObjectHandler(eventData, transform) {
+      CanvasManager.duplicateSelected(transform.target);
+      return true;
+    },
+
+    // Place les 4 contrôles aux coins. À appeler une seule fois, globalement.
+    install() {
+      if (!window.fabric) {
+        console.error('[CustomControls] fabric.js non chargé.');
+        return;
+      }
+
+      this.preloadIcons();
+
+      const Control = fabric.Control;
+
+      // Décalage en pixels appliqué à chaque icône, vers l'extérieur du coin,
+      // pour qu'elle soit nettement détachée du cadre de sélection (cf. capture d'écran).
+      const OFFSET = 60;
+
+      fabric.Object.prototype.controls.tl = new Control({
+        x: -0.5,
+        y: -0.5,
+        offsetX: -OFFSET,
+        offsetY: -OFFSET,
+        cursorStyle: 'pointer',
+        mouseUpHandler: this.deleteObjectHandler,
+        render: this.renderIcon('delete'),
+        sizeX: 32,
+        sizeY: 32,
+      });
+
+      fabric.Object.prototype.controls.tr = new Control({
+        x: 0.5,
+        y: -0.5,
+        offsetX: OFFSET,
+        offsetY: -OFFSET,
+        cursorStyle: 'pointer',
+        actionHandler: fabric.controlsUtils.rotationWithSnapping,
+        actionName: 'rotate',
+        render: this.renderIcon('rotate'),
+        sizeX: 32,
+        sizeY: 32,
+      });
+
+      fabric.Object.prototype.controls.bl = new Control({
+        x: -0.5,
+        y: 0.5,
+        offsetX: -OFFSET,
+        offsetY: OFFSET,
+        cursorStyle: 'pointer',
+        mouseUpHandler: this.cloneObjectHandler,
+        render: this.renderIcon('clone'),
+        sizeX: 32,
+        sizeY: 32,
+      });
+
+      fabric.Object.prototype.controls.br = new Control({
+        x: 0.5,
+        y: 0.5,
+        offsetX: OFFSET,
+        offsetY: OFFSET,
+        cursorStyle: 'nwse-resize',
+        actionHandler: fabric.controlsUtils.scalingEqually,
+        actionName: 'scale',
+        render: this.renderIcon('resize'),
+        sizeX: 32,
+        sizeY: 32,
+      });
+
+      // On masque les contrôles milieux (mt, mb, ml, mr) et mtr (poignée de rotation par défaut)
+      // pour ne garder que les 4 coins, comme dans l'exemple visuel.
+      fabric.Object.prototype.setControlsVisibility({
+        mt: false,
+        mb: false,
+        ml: false,
+        mr: false,
+        mtr: false,
+      });
+
+      // Style de la bounding box (ligne bleue fine, pas de coins carrés par défaut)
+      fabric.Object.prototype.set({
+        transparentCorners: true,
+        borderColor: '#2f6fed',
+        cornerColor: 'rgba(0,0,0,0)', // invisible, on dessine nos propres icônes
+        borderScaleFactor: 1.5,
+        padding: 0,
+      });
+
+      Utils.log('[CustomControls] Contrôles 4-coins installés.');
+    },
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════════
   // CANVAS MANAGER — VERSION CORRIGÉE ET COMPLÈTE
   // ══════════════════════════════════════════════════════════════════════════════
 
@@ -160,18 +352,25 @@
         return;
       }
 
+      // Installer les contrôles custom (icônes rondes aux 4 coins) avant tout objet
+      CustomControls.install();
+
       // Créer l'instance Fabric.js
       AppState.fabricCanvas = new fabric.Canvas('customization-canvas', {
         width: CONFIG.CANVAS_WIDTH,
         height: CONFIG.CANVAS_HEIGHT,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: 'transparent',
         preserveObjectStacking: true,
         selection: true,
-        // Garder les objets dans les limites du canvas
+        interactive: true,
         centeredScaling: false,
       });
 
       Utils.log('Canvas Fabric.js initialisé');
+
+      // Redimensionner le canvas pour occuper toute la hauteur du workspace
+      this.resizeCanvasToWorkspace();
+      window.addEventListener('resize', () => this.resizeCanvasToWorkspace());
 
       // Configurer les événements
       this.setupCanvasEvents();
@@ -179,6 +378,49 @@
 
       // Charger la vue initiale (Front)
       this.loadView('front');
+
+      window.dispatchEvent(new CustomEvent('configurator:canvas-ready'));
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // REDIMENSIONNEMENT : remplit la hauteur disponible du workspace
+    // Le ratio 4:3 (800×600) est préservé. On scale via CSS transform
+    // pour ne pas détruire les coordonnées internes de Fabric.js.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    resizeCanvasToWorkspace() {
+      const workspace = document.querySelector('.canvas-workspace');
+      const wrapper   = document.querySelector('.canvas-workspace .canvas-wrapper');
+      if (!workspace || !wrapper) return;
+
+      const padding     = 48; // var(--spacing-lg) × 2 = 2rem × 2 = 32px, on prend 48 pour confort
+      const availH      = workspace.clientHeight - padding;
+      const availW      = workspace.clientWidth  - padding - 90; // 90 = sélecteur vues flottant
+      if (availH <= 0 || availW <= 0) return;
+
+      // Ratio interne du canvas Fabric.js (800×600 = 4:3)
+      const ratio   = CONFIG.CANVAS_WIDTH / CONFIG.CANVAS_HEIGHT;
+      let   dispH   = availH;
+      let   dispW   = dispH * ratio;
+      if (dispW > availW) {
+        dispW = availW;
+        dispH = dispW / ratio;
+      }
+
+      // Appliquer via CSS transform sur le wrapper (ne touche pas les coords internes)
+      const scale = dispW / CONFIG.CANVAS_WIDTH;
+      const fabricWrap = wrapper.querySelector('.canvas-container') || wrapper;
+      if (fabricWrap) {
+        fabricWrap.style.transform        = `scale(${scale})`;
+        fabricWrap.style.transformOrigin  = 'top center';
+      }
+
+      // Ajuster la taille du wrapper pour que les éléments autour s'alignent
+      wrapper.style.width  = `${dispW}px`;
+      wrapper.style.height = `${dispH}px`;
+      wrapper.style.overflow = 'visible';
+
+      Utils.log(`Canvas redimensionné : ${dispW.toFixed(0)}×${dispH.toFixed(0)}px (scale=${scale.toFixed(3)})`);
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -220,15 +462,37 @@
       canvas.on('object:removed',  () => this.saveCurrentView());
 
       // ─────────────────────────────────────────────────────────────────────
-      // CONTRAINTE DE DÉPLACEMENT DANS LA ZONE ÉDITABLE
-      // Empêche l'utilisateur de sortir complètement de la zone
+      // CONTRAINTE DE DÉPLACEMENT + ZONES POINTILLÉES (style Custom Ink)
+      // Les zones n'apparaissent que pendant le déplacement/redimensionnement
       // ─────────────────────────────────────────────────────────────────────
       canvas.on('object:moving', (e) => {
-        this.constrainObjectToZone(e.target);
+        if (e.target && !e.target.isZoneIndicator) {
+          this.showZoneGuides();
+          this.constrainObjectToZone(e.target);
+        }
       });
 
       canvas.on('object:scaling', (e) => {
-        this.constrainObjectToZone(e.target);
+        if (e.target && !e.target.isZoneIndicator) {
+          this.showZoneGuides();
+          this.constrainObjectToZone(e.target);
+        }
+      });
+
+      canvas.on('object:rotating', (e) => {
+        if (e.target && !e.target.isZoneIndicator) {
+          this.showZoneGuides();
+        }
+      });
+
+      canvas.on('mouse:up', () => {
+        this.hideZoneGuides();
+      });
+
+      canvas.on('object:modified', (e) => {
+        if (e.target && !e.target.isZoneIndicator) {
+          this.hideZoneGuides();
+        }
       });
     },
 
@@ -240,33 +504,63 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     constrainObjectToZone(obj) {
-      const zone = AppState.editableZones[AppState.currentView];
-      if (!zone) return;
-
-      const objBounds = obj.getBoundingRect();
-
-      // Limites de la zone
-      const zoneRight  = zone.x + zone.w;
-      const zoneBottom = zone.y + zone.h;
-
-      // Si l'objet sort complètement à droite
-      if (objBounds.left > zoneRight - 20) {
-        obj.left = zoneRight - 20;
-      }
-      // Si l'objet sort complètement à gauche
-      if (objBounds.left + objBounds.width < zone.x + 20) {
-        obj.left = zone.x + 20 - objBounds.width;
-      }
-      // Si l'objet sort complètement en bas
-      if (objBounds.top > zoneBottom - 20) {
-        obj.top = zoneBottom - 20;
-      }
-      // Si l'objet sort complètement en haut
-      if (objBounds.top + objBounds.height < zone.y + 20) {
-        obj.top = zone.y + 20 - objBounds.height;
-      }
+      const zone = this.getActiveZone(AppState.currentView);
+      if (!zone || !obj) return;
 
       obj.setCoords();
+      const bound = obj.getBoundingRect(true, true);
+
+      let dx = 0;
+      let dy = 0;
+
+      if (bound.left < zone.x) {
+        dx = zone.x - bound.left;
+      } else if (bound.left + bound.width > zone.x + zone.w) {
+        dx = (zone.x + zone.w) - (bound.left + bound.width);
+      }
+
+      if (bound.top < zone.y) {
+        dy = zone.y - bound.top;
+      } else if (bound.top + bound.height > zone.y + zone.h) {
+        dy = (zone.y + zone.h) - (bound.top + bound.height);
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        obj.left += dx;
+        obj.top += dy;
+        obj.setCoords();
+      }
+    },
+
+    getZonesList(view) {
+      const raw = AppState.editableZones[view || AppState.currentView];
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw;
+      return [{ ...raw, id: raw.id || 'main', label: raw.label || 'Zone' }];
+    },
+
+    clearZoneIndicators() {
+      const canvas = AppState.fabricCanvas;
+      if (!canvas) return;
+      canvas.getObjects()
+        .filter(o => o.isZoneIndicator)
+        .forEach(o => canvas.remove(o));
+    },
+
+    showZoneGuides() {
+      if (AppState._zoneGuidesVisible) return;
+      AppState._zoneGuidesVisible = true;
+      this.drawEditableZoneIndicator(AppState.currentView);
+      AppState.fabricCanvas.requestRenderAll();
+    },
+
+    hideZoneGuides() {
+      if (!AppState._zoneGuidesVisible) return;
+      AppState._zoneGuidesVisible = false;
+      this.clearZoneIndicators();
+      if (AppState.fabricCanvas) {
+        AppState.fabricCanvas.requestRenderAll();
+      }
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -274,7 +568,7 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     setupViewTabs() {
-      document.querySelectorAll('.view-tab').forEach(tab => {
+      document.querySelectorAll('.view-thumbnail-btn').forEach(tab => {
         tab.addEventListener('click', () => {
           const view = tab.dataset.view;
           if (view) this.switchView(view);
@@ -284,88 +578,113 @@
 
     // ─────────────────────────────────────────────────────────────────────────
     // CHARGEMENT D'UNE VUE
-    // CORRECTION : loader désactivé APRÈS renderAll complet (fin de callback)
     // ─────────────────────────────────────────────────────────────────────────
 
     loadView(view) {
       Utils.toggleCanvasLoader(true);
+      AppState._zoneGuidesVisible = false;
+      Utils.log(`[CanvasManager] Début loadView pour "${view}"`);
 
       const canvas = AppState.fabricCanvas;
       if (!canvas) {
-        console.error('[Canvas] Canvas non initialisé dans loadView');
+        console.error('[CanvasManager] Erreur : Canvas non initialisé');
         Utils.toggleCanvasLoader(false);
         return;
       }
 
-      canvas.clear();
-      canvas.backgroundColor = '#f8f8f8';
+      try {
+        canvas.clear();
+        canvas.backgroundColor = 'transparent';
 
-      let backgroundUrl = AppState.viewImages[view];
-      
-      // Fix pour les URLs Shopify sans protocole (//cdn.shopify.com/...)
-      if (backgroundUrl && backgroundUrl.startsWith('//')) {
-        backgroundUrl = 'https:' + backgroundUrl;
-      }
+        let backgroundUrl = AppState.viewImages[view];
+        
+        // Nettoyage de l'URL
+        if (backgroundUrl && backgroundUrl.startsWith('//')) {
+          backgroundUrl = 'https:' + backgroundUrl;
+        }
 
-      Utils.log(`Chargement de la vue "${view}" :`, backgroundUrl);
+        const isUrlValid = backgroundUrl && 
+                         backgroundUrl !== '' && 
+                         backgroundUrl !== 'undefined' && 
+                         backgroundUrl !== 'null' &&
+                         backgroundUrl.length > 5;
 
-      if (backgroundUrl && backgroundUrl !== '' && backgroundUrl !== 'undefined' && backgroundUrl !== 'null') {
-        // Tentative 1 : avec crossOrigin (requis pour l'export canvas)
-        // Tentative 2 : sans crossOrigin (fallback pour les URLs externes sans CORS)
-        const tryLoad = (withCors) => {
-          const opts = withCors ? { crossOrigin: 'anonymous' } : {};
-          fabric.Image.fromURL(
-            backgroundUrl,
-            (img) => {
-              if (!img) {
-                if (withCors) {
-                  console.warn(`[Canvas] Échec CORS pour "${view}", retry sans crossOrigin...`);
-                  tryLoad(false);
-                } else {
-                  console.error(`[Canvas] Échec du chargement de l'image de fond pour la vue "${view}" :`, backgroundUrl);
-                  this.loadViewWithoutBackground(view);
-                }
-                return;
+        if (isUrlValid) {
+          Utils.log(`[CanvasManager] Chargement image de fond : ${backgroundUrl}`);
+          
+          const tryLoad = (withCors) => {
+            const opts = withCors ? { crossOrigin: 'anonymous' } : {};
+            
+            // Timeout de sécurité pour le chargement de l'image (10s)
+            const imageLoadTimeout = setTimeout(() => {
+              console.warn(`[CanvasManager] Timeout chargement image pour "${view}" (cors=${withCors})`);
+              if (withCors) {
+                tryLoad(false);
+              } else {
+                this.loadViewWithoutBackground(view);
               }
+            }, 10000);
 
-              // Adapter l'image au canvas en couvrant toute la surface
-              const scaleX = CONFIG.CANVAS_WIDTH  / img.width;
-              const scaleY = CONFIG.CANVAS_HEIGHT / img.height;
+            fabric.Image.fromURL(
+              backgroundUrl,
+              (img) => {
+                clearTimeout(imageLoadTimeout);
 
-              img.set({
-                scaleX,
-                scaleY,
-                originX: 'left',
-                originY: 'top',
-                left: 0,
-                top:  0,
-                selectable: false,
-                evented:    false,
-                lockMovementX: true,
-                lockMovementY: true,
-              });
+                if (!img || !img.width) {
+                  if (withCors) {
+                    Utils.log(`[CanvasManager] Échec CORS ou image invalide, essai sans CORS...`);
+                    tryLoad(false);
+                  } else {
+                    console.error(`[CanvasManager] Impossible de charger l'image : ${backgroundUrl}`);
+                    this.loadViewWithoutBackground(view);
+                  }
+                  return;
+                }
 
-              canvas.setBackgroundImage(img, () => {
-                // Appliquer le clipping mask de la zone éditable
-                this.applyCanvasClipPath(view);
+                // Calcul du scale avec sécurité
+                const scaleX = CONFIG.CANVAS_WIDTH  / img.width;
+                const scaleY = CONFIG.CANVAS_HEIGHT / img.height;
+                const scale = Math.min(scaleX, scaleY);
 
-                // Dessiner le rectangle indicateur de zone
-                this.drawEditableZoneIndicator(view);
+                if (isNaN(scale) || !isFinite(scale)) {
+                  console.error('[CanvasManager] Erreur de calcul du scale (image corrompue ?)');
+                  this.loadViewWithoutBackground(view);
+                  return;
+                }
 
-                // Restaurer les objets de cette vue
-                this.restoreViewObjects(view, () => {
-                  canvas.renderAll();
-                  Utils.toggleCanvasLoader(false);
-                  Utils.log(`Vue "${view}" chargée avec background (cors=${withCors})`);
+                img.set({
+                  scaleX: scale,
+                  scaleY: scale,
+                  originX: 'center',
+                  originY: 'center',
+                  left: CONFIG.CANVAS_WIDTH / 2,
+                  top:  CONFIG.CANVAS_HEIGHT / 2,
+                  selectable: false,
+                  evented:    false,
+                  lockMovementX: true,
+                  lockMovementY: true,
                 });
-              });
-            },
-            opts
-          );
-        };
-        tryLoad(true);
-      } else {
-        this.loadViewWithoutBackground(view);
+
+                canvas.setBackgroundImage(img, () => {
+                  this.restoreViewObjects(view, () => {
+                    canvas.renderAll();
+                    Utils.toggleCanvasLoader(false);
+                    Utils.log(`[CanvasManager] Vue "${view}" chargée avec succès`);
+                    window.dispatchEvent(new CustomEvent('configurator:view-loaded', { detail: { view } }));
+                  });
+                });
+              },
+              opts
+            );
+          };
+          tryLoad(true);
+        } else {
+          Utils.log(`[CanvasManager] Aucune image de fond valide pour "${view}", chargement vide.`);
+          this.loadViewWithoutBackground(view);
+        }
+      } catch (err) {
+        console.error(`[CanvasManager] Erreur critique dans loadView :`, err);
+        Utils.toggleCanvasLoader(false);
       }
     },
 
@@ -374,49 +693,71 @@
      */
     loadViewWithoutBackground(view) {
       const canvas = AppState.fabricCanvas;
-      this.applyCanvasClipPath(view);
-      this.drawEditableZoneIndicator(view);
+      if (!canvas) return;
+      
       this.restoreViewObjects(view, () => {
         canvas.renderAll();
         Utils.toggleCanvasLoader(false);
-        Utils.log(`Vue "${view}" chargée sans background`);
+        Utils.log(`[CanvasManager] Vue "${view}" chargée (sans fond)`);
+        window.dispatchEvent(new CustomEvent('configurator:view-loaded', { detail: { view } }));
       });
     },
 
     // ─────────────────────────────────────────────────────────────────────────
-    // CLIPPING MASK — CORRECTION PRINCIPALE
+    // CLIPPING MASK — APPROCHE PAR OBJET
     //
-    // Le clipPath est appliqué sur canvas.clipPath (niveau canvas entier),
-    // pas sur chaque objet individuellement.
+    // IMPORTANT : Le clipPath au niveau du canvas (canvas.clipPath) bloque
+    // les événements de souris sur les objets Fabric.js (sélection, déplacement).
+    // On applique donc le clip SUR CHAQUE OBJET individuellement à l'ajout.
     //
-    // absolutePositioned: true → les coordonnées sont relatives au canvas,
-    // pas à l'objet. C'est obligatoire pour un clip au niveau du canvas.
-    //
-    // Ce clipPath est RE-APPLIQUÉ à chaque changement de vue car les
-    // coordonnées de zone peuvent différer entre Front/Back/Left/Right.
+    // applyCanvasClipPath() : ne fait plus rien (conservé pour compatibilité)
+    // applyClipPathToObject() : applique le clip sur un objet donné
+    // applyClipPathToAllObjects() : re-applique sur tous les objets (changement de vue)
     // ─────────────────────────────────────────────────────────────────────────
 
     applyCanvasClipPath(view) {
-      const zone = AppState.editableZones[view];
-      if (!zone) return;
+      // Ne plus appliquer de clipPath au niveau du canvas —
+      // cela cassait la sélection et le déplacement des objets.
+      // Le clip est maintenant appliqué objet par objet via applyClipPathToObject().
+      Utils.log(`applyCanvasClipPath ignoré pour vue "${view}" (clip géré par objet)`);
+    },
 
-      const canvas = AppState.fabricCanvas;
-
-      // Créer le rectangle de clip avec les coordonnées de la zone éditable
-      const clipPath = new fabric.Rect({
-        left:   zone.x,
-        top:    zone.y,
-        width:  zone.w,
-        height: zone.h,
-        // absolutePositioned = true : coordonnées absolues dans le canvas,
-        // indépendantes de la position de l'objet. OBLIGATOIRE ici.
-        absolutePositioned: true,
+    // Crée un rect de clip pour la zone éditable de la vue courante
+    _makeClipRect(view) {
+      const zone = this._getActiveZone(view || AppState.currentView);
+      if (!zone) return null;
+      return new fabric.Rect({
+        left:               zone.x,
+        top:                zone.y,
+        width:              zone.w,
+        height:             zone.h,
+        absolutePositioned: true, // coordonnées absolues dans le canvas
       });
+    },
 
-      // Appliquer au canvas entier — tous les objets seront écrêtés
-      canvas.clipPath = clipPath;
+    // Applique le clipPath sur un objet donné (appelé après chaque add)
+    applyClipPathToObject(obj, view) {
+      const clip = this._makeClipRect(view || AppState.currentView);
+      if (clip) obj.clipPath = clip;
+    },
 
-      Utils.log(`ClipPath appliqué sur vue "${view}" :`, zone);
+    // Re-applique le clipPath sur tous les objets éditables du canvas
+    applyClipPathToAllObjects(view) {
+      const canvas = AppState.fabricCanvas;
+      if (!canvas) return;
+      canvas.getObjects().forEach(obj => {
+        if (obj.selectable !== false && !obj.isZoneIndicator) {
+          this.applyClipPathToObject(obj, view);
+        }
+      });
+      canvas.requestRenderAll();
+      Utils.log(`ClipPath re-appliqué sur tous les objets de la vue "${view}"`);
+    },
+
+    // Alias pour compatibilité avec phase1.js / phase2.js
+    // qui appellent CanvasManager.applyClipPath(obj)
+    applyClipPath(obj) {
+      this.applyClipPathToObject(obj, AppState.currentView);
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -425,28 +766,81 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     drawEditableZoneIndicator(view) {
-      const zone = AppState.editableZones[view];
-      if (!zone) return;
+      const canvas = AppState.fabricCanvas;
+      const zones = this.getZonesList(view);
+      if (!zones.length) return;
 
-      const indicator = new fabric.Rect({
-        left:            zone.x,
-        top:             zone.y,
-        width:           zone.w,
-        height:          zone.h,
-        fill:            'transparent',
-        stroke:          '#ff0000',
-        strokeWidth:     1.5,
-        strokeDashArray: [8, 4],
-        selectable:      false,
-        evented:         false,
-        // Tag custom pour l'identifier et l'exclure de la sauvegarde
-        isZoneIndicator: true,
-        opacity:         0.6,
+      zones.forEach(zone => {
+        const isActive = zone.id === AppState.activeZone;
+
+        const rect = new fabric.Rect({
+          left: zone.x,
+          top: zone.y,
+          width: zone.w,
+          height: zone.h,
+          fill: 'rgba(74, 144, 226, 0.04)',
+          stroke: isActive ? '#4A90E2' : '#888888',
+          strokeWidth: isActive ? 2 : 1.5,
+          strokeDashArray: [10, 6],
+          selectable: false,
+          evented: false,
+          isZoneIndicator: true,
+          zoneId: zone.id,
+          excludeFromExport: true,
+        });
+
+        const label = new fabric.Text(zone.label || 'Zone', {
+          left: zone.x + 8,
+          top: zone.y + 6,
+          fontSize: 13,
+          fontFamily: 'Arial, sans-serif',
+          fontWeight: '600',
+          fill: isActive ? '#4A90E2' : '#666666',
+          selectable: false,
+          evented: false,
+          isZoneIndicator: true,
+          zoneId: zone.id,
+          excludeFromExport: true,
+        });
+
+        canvas.add(rect);
+        canvas.add(label);
+        if (canvas.sendObjectToBack) {
+          canvas.sendObjectToBack(rect);
+        }
       });
+    },
 
-      AppState.fabricCanvas.add(indicator);
-      // Mettre l'indicateur en arrière-plan (derrière les images uploadées)
-      AppState.fabricCanvas.sendToBack(indicator);
+    setActiveZone(zoneId, view) {
+      AppState.activeZone = zoneId;
+      if (AppState._zoneGuidesVisible) {
+        this.clearZoneIndicators();
+        this.drawEditableZoneIndicator(view);
+        AppState.fabricCanvas.renderAll();
+      }
+    },
+
+    _getActiveZone(view) {
+      const zones = AppState.editableZones[view];
+      if (!zones) return null;
+      if (Array.isArray(zones)) {
+        return zones.find(z => z.id === AppState.activeZone) || zones[0];
+      }
+      return zones;
+    },
+
+    getActiveZone(view) {
+      return this._getActiveZone(view || AppState.currentView);
+    },
+
+    _makeClipRect(view) {
+      const zone = this._getActiveZone(view || AppState.currentView);
+      if (!zone) return null;
+      return new fabric.Rect({
+        left: zone.x, top: zone.y,
+        width: zone.w, height: zone.h,
+        absolutePositioned: true,
+      });
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -465,9 +859,10 @@
 
       // Sérialiser en JSON Fabric.js (inclut toutes les propriétés)
       AppState.viewsData[view].objects = objects.map(obj => obj.toJSON([
-        'selectable', 'evented', 'isZoneIndicator',
+        'selectable', 'evented', 'isZoneIndicator', 'clipPath',
       ]));
 
+      console.log(`✅ [SAVE] Vue "${view}" sauvegardée — ${objects.length} objet(s)`, AppState.viewsData[view]);
       Utils.log(`Vue "${view}" sauvegardée — ${objects.length} objet(s)`);
     },
 
@@ -479,17 +874,52 @@
     restoreViewObjects(view, callback) {
       const viewData = AppState.viewsData[view];
 
-      if (!viewData.objects || viewData.objects.length === 0) {
-        // Aucun objet à restaurer — appeler quand même le callback
+      console.log(`📥 [RESTORE] Tentative de restauration vue "${view}"`, viewData);
+
+      if (!viewData || !viewData.objects || viewData.objects.length === 0) {
+        console.log(`📥 [RESTORE] Vue "${view}" vide, rien à restaurer`);
         if (callback) callback();
         return;
       }
 
-      fabric.util.enlivenObjects(viewData.objects, (objects) => {
-        objects.forEach(obj => AppState.fabricCanvas.add(obj));
-        Utils.log(`${objects.length} objet(s) restauré(s) sur vue "${view}"`);
+      try {
+        fabric.util.enlivenObjects(viewData.objects, (objects) => {
+          console.log(`📥 [RESTORE] ${objects.length} objets enliven pour vue "${view}"`, objects);
+          objects.forEach(obj => {
+            this.applyClipPathToObject(obj, view);
+            AppState.fabricCanvas.add(obj);
+          });
+          Utils.log(`[CanvasManager] ${objects.length} objet(s) restauré(s) sur vue "${view}"`);
+          console.log(`✅ [RESTORE] Vue "${view}" restaurée avec succès`);
+          if (callback) callback();
+        }, 'fabric');
+      } catch (err) {
+        console.error(`❌ [RESTORE] Erreur lors de la restauration des objets :`, err);
+        if (callback) callback();
+      }
+    },
+
+    reloadCurrentViewObjects(callback) {
+      const view   = AppState.currentView;
+      const canvas = AppState.fabricCanvas;
+      if (!canvas) return;
+
+      canvas.getObjects()
+        .filter(obj => obj.selectable !== false && !obj.isZoneIndicator)
+        .forEach(obj => canvas.remove(obj));
+
+      canvas.discardActiveObject();
+
+      this.restoreViewObjects(view, () => {
+        canvas.requestRenderAll();
         if (callback) callback();
       });
+    },
+
+    getDisplayScale() {
+      const wrapper = document.querySelector('.canvas-workspace .canvas-wrapper');
+      if (!wrapper || !wrapper.clientWidth) return 1;
+      return wrapper.clientWidth / CONFIG.CANVAS_WIDTH;
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -497,22 +927,29 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     switchView(view) {
-      if (view === AppState.currentView) return;
+      if (view === AppState.currentView) {
+        console.log(`🔄 [SWITCH] Déjà sur la vue "${view}", rien à faire`);
+        return;
+      }
+
+      console.log(`🔄 [SWITCH] Changement de vue : "${AppState.currentView}" → "${view}"`);
 
       // Sauvegarder la vue actuelle avant de changer
       this.saveCurrentView();
 
       // Mettre à jour l'état
+      const previousView = AppState.currentView;
       AppState.currentView = view;
 
       // Mettre à jour l'UI des onglets
-      document.querySelectorAll('.view-tab').forEach(tab => {
+      document.querySelectorAll('.view-thumbnail-btn').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.view === view);
       });
 
       // Charger la nouvelle vue (avec son clipPath propre)
       this.loadView(view);
 
+      console.log(`✅ [SWITCH] Basculement de "${previousView}" vers "${view}" terminé`);
       Utils.log(`Basculement vers vue "${view}"`);
     },
 
@@ -531,16 +968,20 @@
           return;
         }
 
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) {
+          Utils.toggleCanvasLoader(false);
+          return;
+        }
 
-        // Calculer la taille max (80 % de la zone éditable)
-        const maxWidth  = zone.w * 0.8;
-        const maxHeight = zone.h * 0.8;
+        // Calculer la taille max (100 % de la zone éditable pour la hauteur)
+        const maxWidth  = zone.w;
+        const maxHeight = zone.h;
 
         // Redimensionner proportionnellement
         const scaleX = maxWidth  / img.width;
         const scaleY = maxHeight / img.height;
-        const scale  = Math.min(scaleX, scaleY, 1); // Ne pas agrandir si déjà petite
+        const scale  = Math.min(scaleX, scaleY); // Prend toute la hauteur disponible (ou largeur si plus contraignante)
 
         img.set({
           scaleX:  scale,
@@ -552,9 +993,17 @@
           originY: 'center',
         });
 
+        // Appliquer le clip sur l'image (pas au niveau canvas)
+        this.applyClipPathToObject(img, AppState.currentView);
+
         AppState.fabricCanvas.add(img);
         AppState.fabricCanvas.setActiveObject(img);
         AppState.fabricCanvas.requestRenderAll();
+
+        if (window.ObjectFloatingActions) {
+          window.ObjectFloatingActions.applyObjectDefaults(img);
+          window.ObjectFloatingActions.show(img);
+        }
 
         Utils.toggleCanvasLoader(false);
         Utils.log('Image ajoutée au canvas');
@@ -576,6 +1025,34 @@
       canvas.requestRenderAll();
 
       Utils.log(`${activeObjects.length} objet(s) supprimé(s)`);
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DUPLICATION DE L'OBJET SÉLECTIONNÉ
+    // ─────────────────────────────────────────────────────────────────────────
+
+    duplicateSelected(target) {
+      const canvas = AppState.fabricCanvas;
+      const source = target || canvas.getActiveObject();
+      if (!source) return;
+
+      const placeClone = (cloned) => {
+        cloned.set({
+          left: source.left + 20,
+          top: source.top + 20,
+          evented: true,
+        });
+        canvas.add(cloned);
+        canvas.setActiveObject(cloned);
+        canvas.requestRenderAll();
+        Utils.log('Objet dupliqué');
+      };
+
+      // Fabric v5 : clone(callback) — Fabric v6 : clone() retourne une Promise
+      const result = source.clone(placeClone);
+      if (result && typeof result.then === 'function') {
+        result.then(placeClone);
+      }
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -702,11 +1179,18 @@
                 finishExport();
                 return;
               }
+              // Mode CONTAIN pour l'export aussi (toute l'image visible)
+              const scaleX = CONFIG.CANVAS_WIDTH  / img.width;
+              const scaleY = CONFIG.CANVAS_HEIGHT / img.height;
+              const scale = Math.min(scaleX, scaleY);
+              
               img.set({
-                scaleX: CONFIG.CANVAS_WIDTH  / img.width,
-                scaleY: CONFIG.CANVAS_HEIGHT / img.height,
-                left:   0,
-                top:    0,
+                scaleX: scale,
+                scaleY: scale,
+                originX: 'center',
+                originY: 'center',
+                left: CONFIG.CANVAS_WIDTH / 2,
+                top:  CONFIG.CANVAS_HEIGHT / 2,
                 selectable: false,
                 evented:    false,
               });
@@ -760,10 +1244,13 @@
         right: { objects: [] },
       };
       AppState.currentView = 'front';
+      AppState._zoneGuidesVisible = false;
 
       // Mettre à jour l'état global
       AppState.selectedProduct = productData;
       AppState.viewImages      = productData.viewImages;
+
+      Utils.log('Produit sélectionné avec images :', AppState.viewImages);
 
       // Charger les zones éditables depuis les metafields (ou garder les défauts)
       if (productData.editableZones) {
@@ -793,8 +1280,25 @@
         titleEl.textContent = AppState.selectedProduct.title;
       }
 
+      // Mettre à jour les miniatures des vignettes de vues
+      const views = ['front', 'back', 'left', 'right'];
+      views.forEach(view => {
+        const btn = document.getElementById(`btn-view-${view}`);
+        const img = document.getElementById(`view-thumbnail-${view}`);
+        const url = AppState.viewImages[view];
+        
+        if (btn && img) {
+          if (url && url !== 'undefined' && url !== 'null' && url !== '') {
+            img.src = url.startsWith('//') ? 'https:' + url : url;
+            btn.style.display = 'flex';
+          } else {
+            btn.style.display = 'none';
+          }
+        }
+      });
+
       // Réinitialiser les onglets
-      document.querySelectorAll('.view-tab').forEach(tab => {
+      document.querySelectorAll('.view-thumbnail-btn').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.view === 'front');
       });
     },
@@ -818,6 +1322,7 @@
         right: { objects: [] },
       };
       AppState.currentView = 'front';
+      AppState._zoneGuidesVisible = false;
 
       if (AppState.fabricCanvas) {
         AppState.fabricCanvas.dispose();
@@ -1057,61 +1562,59 @@
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // GESTIONNAIRE DES ACCORDÉONS (COLLAPSES)
+  // GESTIONNAIRE D'ONGLETS (SIDEBAR GAUCHE)
+  // ══════════════════════════════════════════════════════════════════════════════
+
+  const TabManager = {
+    init() {
+      document.querySelectorAll('.nav-icon-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tabId = btn.dataset.tab;
+          if (tabId) this.switchTab(tabId);
+        });
+      });
+    },
+
+    switchTab(tabId) {
+      // Désactiver tous les boutons et panels
+      document.querySelectorAll('.nav-icon-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+      });
+
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === tabId);
+      });
+
+      Utils.log(`Changement d'onglet : ${tabId}`);
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // ACCORDION MANAGER (Mappé sur les onglets pour la rétrocompatibilité)
   // ══════════════════════════════════════════════════════════════════════════════
 
   const AccordionManager = {
     init() {
-      this.setupEventListeners();
       this.setupUploadHook();
     },
 
-    /**
-     * Gère les clics sur les titres pour ouvrir/fermer
-     */
-    setupEventListeners() {
-      document.addEventListener('click', (e) => {
-        const title = e.target.closest('.control-title');
-        if (title) {
-          const group = title.closest('.control-group');
-          if (group) {
-            // Fermer tous les autres groupes sauf celui cliqué
-            document.querySelectorAll('.control-group').forEach(g => {
-              if (g !== group) {
-                g.classList.add('is-collapsed');
-              }
-            });
-
-            // Basculer l'état du groupe cliqué
-            group.classList.toggle('is-collapsed');
-          }
-        }
-      });
-    },
-
-    /**
-     * Ouvre une section spécifique par son ID
-     */
     openSection(groupId) {
-      const group = document.getElementById(groupId);
-      if (group) {
-        // Fermer les autres
-        document.querySelectorAll('.control-group').forEach(g => {
-          if (g !== group) {
-            g.classList.add('is-collapsed');
-          }
-        });
-        // Ouvrir celle-ci
-        group.classList.remove('is-collapsed');
-        
-        // Scroll fluide vers la section si nécessaire
-        group.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const groupToTabMap = {
+        'group-upload': 'tab-upload',
+        'group-text': 'tab-text',
+        'group-cliparts': 'tab-cliparts',
+        'group-shapes': 'tab-shapes',
+        'group-layers': 'tab-layers',
+        'group-devis': 'tab-devis',
+        'group-help': 'tab-help'
+      };
+      
+      const tabId = groupToTabMap[groupId];
+      if (tabId && TabManager) {
+        TabManager.switchTab(tabId);
       }
     },
 
-    /**
-     * Hook pour ouvrir automatiquement lors du choix de fichier
-     */
     setupUploadHook() {
       const fileInput = document.getElementById('image-upload-input');
       if (fileInput) {
@@ -1119,9 +1622,6 @@
       }
     },
 
-    /**
-     * Détermine quelle section ouvrir selon l'objet sélectionné
-     */
     handleAutoOpenOnSelection(e) {
       if (!e.selected || !e.selected[0]) return;
       const obj = e.selected[0];
@@ -1155,6 +1655,7 @@
     UploadManager.init();
     SubmissionManager.init();
     AccordionManager.init();
+    TabManager.init();
 
     Utils.log('✅ Configurateur prêt.');
   }
@@ -1175,5 +1676,6 @@
   window.ProductManager = ProductManager;
   window.UploadManager = UploadManager;
   window.AccordionManager = AccordionManager;
+  window.TabManager = TabManager;
 
 })();

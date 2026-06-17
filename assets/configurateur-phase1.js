@@ -110,18 +110,46 @@
     addText() {
       if (!AppState.fabricCanvas) return;
 
-      const zone = AppState.editableZones[AppState.currentView];
+      // Récupérer le texte saisi dans le textarea CustomInk
+      const textInputField = document.getElementById('text-input');
+      const userText = textInputField && textInputField.value.trim() !== '' 
+        ? textInputField.value.trim() 
+        : PHASE1_CONFIG.DEFAULT_TEXT;
+
+      // Position par défaut au centre du canvas (800x600)
+      let posX = 400;
+      let posY = 300;
+
+      // Centrer dans la zone éditable active
+      const zone = CanvasManager.getActiveZone(AppState.currentView);
+      if (zone) {
+        posX = zone.x + (zone.w / 2);
+        posY = zone.y + (zone.h / 2);
+      }
       
-      const text = new fabric.IText(PHASE1_CONFIG.DEFAULT_TEXT, {
-        left: zone.x + (zone.w / 2),
-        top: zone.y + (zone.h / 2),
+      // Récupérer la couleur active
+      const activeColorBtn = document.querySelector('.palette-color.active');
+      const color = activeColorBtn ? activeColorBtn.dataset.color : this.currentColor;
+
+      const text = new fabric.IText(userText, {
+        left: posX,
+        top: posY,
         fontFamily: this.currentFont,
         fontSize: this.currentSize,
-        fill: this.currentColor,
+        fill: color,
         originX: 'center',
         originY: 'center',
-        editable: true
+        editable: true,
+        hasControls: true,
+        hasBorders: true,
+        borderColor: '#4A90E2',
+        borderScaleFactor: 1.5,
+        padding: 8,
       });
+
+      if (window.TextFloatingActions) {
+        window.TextFloatingActions.applyTextDefaults(text);
+      }
 
       // Appliquer le clipping mask
       if (typeof CanvasManager !== 'undefined' && CanvasManager.applyClipPath) {
@@ -132,11 +160,11 @@
       AppState.fabricCanvas.setActiveObject(text);
       AppState.fabricCanvas.renderAll();
 
-      // Passer en mode édition
-      text.enterEditing();
-      text.selectAll();
+      if (window.TextFloatingActions) {
+        window.TextFloatingActions.show(text);
+      }
 
-      console.log('[TextManager] Texte ajouté');
+      console.log('[TextManager] Texte ajouté avec succès:', userText);
     },
 
     /**
@@ -234,7 +262,8 @@
     addClipart(emoji, name) {
       if (!AppState.fabricCanvas) return;
 
-      const zone = AppState.editableZones[AppState.currentView];
+      const zone = CanvasManager.getActiveZone(AppState.currentView);
+      if (!zone) return;
 
       // Créer un texte Fabric avec l'emoji (taille XXL pour bonne qualité)
       const clipart = new fabric.Text(emoji, {
@@ -252,9 +281,17 @@
         CanvasManager.applyClipPath(clipart);
       }
 
+      if (window.ObjectFloatingActions) {
+        window.ObjectFloatingActions.applyObjectDefaults(clipart);
+      }
+
       AppState.fabricCanvas.add(clipart);
       AppState.fabricCanvas.setActiveObject(clipart);
       AppState.fabricCanvas.renderAll();
+
+      if (window.ObjectFloatingActions) {
+        window.ObjectFloatingActions.show(clipart);
+      }
 
       console.log(`[ClipartManager] Clipart ajouté : ${name} (${emoji})`);
     },
@@ -291,114 +328,14 @@
      * Injecte les contrôles de texte
      */
     injectTextControls() {
-      const controlsPanel = document.querySelector('.controls-panel');
-      if (!controlsPanel) return;
-
-      const textControlsHTML = `
-        <div class="control-group is-collapsed phase1-text-controls" id="group-text">
-          <h3 class="control-title">✍️ Ajouter du texte</h3>
-          
-          <div class="control-content">
-            <button class="btn btn-secondary btn-full" id="btn-add-text" type="button">
-              ➕ Ajouter un texte
-            </button>
-
-            <div class="text-options" id="text-options" style="display: none; margin-top: 1rem;">
-              
-              <!-- Police -->
-              <div class="form-group">
-                <label class="form-label">Police</label>
-                <select id="text-font" class="form-input">
-                  ${PHASE1_CONFIG.FONTS.map(font => 
-                    `<option value="${font}" ${font === 'Arial' ? 'selected' : ''}>${font}</option>`
-                  ).join('')}
-                </select>
-              </div>
-
-              <!-- Taille -->
-              <div class="form-group">
-                <label class="form-label">Taille</label>
-                <select id="text-size" class="form-input">
-                  ${PHASE1_CONFIG.TEXT_SIZES.map(size => 
-                    `<option value="${size}" ${size === 48 ? 'selected' : ''}>${size}px</option>`
-                  ).join('')}
-                </select>
-              </div>
-
-              <!-- Couleur -->
-              <div class="form-group">
-                <label class="form-label">Couleur</label>
-                <div class="color-picker-grid">
-                  ${PHASE1_CONFIG.PRESET_COLORS.map(color => 
-                    `<button class="color-swatch" 
-                            data-color="${color.value}" 
-                            style="background: ${color.value};"
-                            title="${color.name}"
-                            type="button"></button>`
-                  ).join('')}
-                </div>
-                <input type="color" id="text-color-custom" class="form-input" value="#000000" style="margin-top: 0.5rem;">
-              </div>
-
-              <!-- Styles -->
-              <div class="form-group">
-                <label class="form-label">Style</label>
-                <div class="text-style-buttons">
-                  <button class="btn btn-icon" id="btn-text-bold" title="Gras" type="button">
-                    <strong>B</strong>
-                  </button>
-                  <button class="btn btn-icon" id="btn-text-italic" title="Italique" type="button">
-                    <em>I</em>
-                  </button>
-                  <button class="btn btn-icon" id="btn-text-underline" title="Souligné" type="button">
-                    <u>U</u>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Insérer avant le groupe "Actions"
-      const actionsGroup = document.getElementById('group-actions');
-      if (actionsGroup) {
-        actionsGroup.insertAdjacentHTML('beforebegin', textControlsHTML);
-      }
+      // Les contrôles sont déclarés statiquement dans le template configurateur.liquid
     },
 
     /**
      * Injecte le panneau de cliparts
      */
     injectClipartPanel() {
-      const controlsPanel = document.querySelector('.controls-panel');
-      if (!controlsPanel) return;
-
-      const categories = Object.keys(PHASE1_CONFIG.CLIPARTS);
-      
-      const clipartHTML = `
-        <div class="control-group is-collapsed phase1-clipart-controls" id="group-cliparts">
-          <h3 class="control-title">🎨 Ajouter un motif</h3>
-          
-          <div class="control-content">
-            <!-- Sélecteur de catégorie -->
-            <select id="clipart-category" class="form-input">
-              ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-            </select>
-
-            <!-- Grille de cliparts -->
-            <div class="clipart-grid" id="clipart-grid" style="margin-top: 1rem;">
-              ${this.renderClipartCategory(categories[0])}
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Insérer avant le groupe "Actions"
-      const actionsGroup = document.getElementById('group-actions');
-      if (actionsGroup) {
-        actionsGroup.insertAdjacentHTML('beforebegin', clipartHTML);
-      }
+      // Les contrôles sont déclarés statiquement dans le template configurateur.liquid
     },
 
     /**
@@ -427,7 +364,6 @@
       if (btnAddText) {
         btnAddText.addEventListener('click', () => {
           TextManager.addText();
-          this.showTextOptions();
         });
       }
 
@@ -437,25 +373,17 @@
         fontSelect.addEventListener('change', (e) => TextManager.changeFont(e.target.value));
       }
 
-      const sizeSelect = document.getElementById('text-size');
-      if (sizeSelect) {
-        sizeSelect.addEventListener('change', (e) => TextManager.changeSize(parseInt(e.target.value)));
-      }
-
-      // Boutons de couleur prédéfinie
-      document.querySelectorAll('.color-swatch').forEach(btn => {
+      // Palette de couleurs compacte (CustomInk style)
+      document.querySelectorAll('.palette-color').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const color = e.target.dataset.color;
+          const color = e.currentTarget.dataset.color;
           TextManager.changeColor(color);
-          document.getElementById('text-color-custom').value = color;
+          
+          // Marquer comme actif
+          document.querySelectorAll('.palette-color').forEach(b => b.classList.remove('active'));
+          e.currentTarget.classList.add('active');
         });
       });
-
-      // Sélecteur de couleur personnalisé
-      const colorCustom = document.getElementById('text-color-custom');
-      if (colorCustom) {
-        colorCustom.addEventListener('input', (e) => TextManager.changeColor(e.target.value));
-      }
 
       // Boutons de style
       const btnBold = document.getElementById('btn-text-bold');
@@ -464,8 +392,14 @@
       const btnItalic = document.getElementById('btn-text-italic');
       if (btnItalic) btnItalic.addEventListener('click', () => TextManager.toggleItalic());
 
-      const btnUnderline = document.getElementById('btn-text-underline');
-      if (btnUnderline) btnUnderline.addEventListener('click', () => TextManager.toggleUnderline());
+      // Boutons d'alignement (liés via Advanced Controls mais ajoutés ici pour sécurité)
+      const aligns = ['left', 'center', 'right'];
+      aligns.forEach(align => {
+        const btn = document.getElementById(`btn-text-align-${align}`);
+        if (btn && window.TextAdvancedControls) {
+          btn.addEventListener('click', () => window.TextAdvancedControls.alignText(align));
+        }
+      });
 
       // Sélecteur de catégorie clipart
       const categorySelect = document.getElementById('clipart-category');
@@ -481,21 +415,6 @@
 
       // Boutons clipart
       this.setupClipartButtons();
-
-      // Afficher les options quand un texte est sélectionné
-      if (AppState.fabricCanvas) {
-        AppState.fabricCanvas.on('selection:created', (e) => {
-          if (e.selected[0].type === 'i-text') {
-            this.showTextOptions();
-          }
-        });
-
-        AppState.fabricCanvas.on('selection:updated', (e) => {
-          if (e.selected[0].type === 'i-text') {
-            this.showTextOptions();
-          }
-        });
-      }
     },
 
     /**
@@ -504,21 +423,11 @@
     setupClipartButtons() {
       document.querySelectorAll('.clipart-item').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const emoji = e.target.dataset.emoji;
-          const name = e.target.dataset.name;
+          const emoji = e.currentTarget.dataset.emoji;
+          const name = e.currentTarget.dataset.name;
           ClipartManager.addClipart(emoji, name);
         });
       });
-    },
-
-    /**
-     * Affiche les options de texte
-     */
-    showTextOptions() {
-      const options = document.getElementById('text-options');
-      if (options) {
-        options.style.display = 'block';
-      }
     }
   };
 
@@ -640,22 +549,44 @@
   // INITIALISATION
   // ══════════════════════════════════════════════════════════════════════════════
 
-  // Attendre que le DOM soit prêt et que le canvas soit initialisé
+  let phase1Initialized = false;
+
   function initPhase1() {
-    // Vérifier que le canvas existe
-    if (!AppState.fabricCanvas) {
-      console.log('[Phase1] Canvas pas encore initialisé, attente...');
-      setTimeout(initPhase1, 500);
-      return;
+    if (!AppState.fabricCanvas) return;
+
+    if (!phase1Initialized) {
+      UIManager.init();
+      phase1Initialized = true;
     }
 
-    UIManager.init();
+    setupCanvasSelectionSync();
     console.log('[Phase1] ✅ Fonctionnalités Texte + Cliparts activées');
   }
 
-  // Lancer l'initialisation - attendre d'abord que AppState soit disponible
+  function setupCanvasSelectionSync() {
+    if (!AppState.fabricCanvas || AppState.fabricCanvas._phase1SelectionSync) return;
+    AppState.fabricCanvas._phase1SelectionSync = true;
+
+    AppState.fabricCanvas.on('selection:created', (e) => {
+      const obj = e.selected[0];
+      if (obj && obj.type === 'i-text') {
+        const input = document.getElementById('text-input');
+        if (input) input.value = obj.text;
+      }
+    });
+
+    AppState.fabricCanvas.on('selection:updated', (e) => {
+      const obj = e.selected[0];
+      if (obj && obj.type === 'i-text') {
+        const input = document.getElementById('text-input');
+        if (input) input.value = obj.text;
+      }
+    });
+  }
+
   waitForConfigurator(() => {
     console.log('[Phase1] Configurateur principal détecté, initialisation...');
+    window.addEventListener('configurator:canvas-ready', initPhase1);
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initPhase1);
     } else {
@@ -670,5 +601,6 @@
     UIManager,
     CONFIG: PHASE1_CONFIG
   };
+
 
 })();

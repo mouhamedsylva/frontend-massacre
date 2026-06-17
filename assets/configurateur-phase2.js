@@ -59,7 +59,9 @@
     addShape(shapeType) {
       if (!AppState.fabricCanvas) return;
 
-      const zone = AppState.editableZones[AppState.currentView];
+      const zone = CanvasManager.getActiveZone(AppState.currentView);
+      if (!zone) return;
+
       const centerX = zone.x + (zone.w / 2);
       const centerY = zone.y + (zone.h / 2);
       const size = PHASE2_CONFIG.DEFAULT_SHAPE_SIZE;
@@ -134,17 +136,24 @@
       }
 
       if (shape) {
-        // Appliquer le clipping mask
         if (typeof CanvasManager !== 'undefined' && CanvasManager.applyClipPath) {
           CanvasManager.applyClipPath(shape);
+        }
+
+        if (window.ObjectFloatingActions) {
+          window.ObjectFloatingActions.applyObjectDefaults(shape);
         }
 
         AppState.fabricCanvas.add(shape);
         AppState.fabricCanvas.setActiveObject(shape);
         AppState.fabricCanvas.renderAll();
 
+        if (window.ObjectFloatingActions) {
+          window.ObjectFloatingActions.show(shape);
+        }
+
         // Sauvegarder dans l'historique
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
 
         console.log(`[ShapeManager] Forme ajoutée : ${shapeType}`);
       }
@@ -233,7 +242,7 @@
       if (activeObject) {
         AppState.fabricCanvas.bringToFront(activeObject);
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
         console.log('[LayerManager] Objet amené au premier plan');
       }
     },
@@ -246,7 +255,7 @@
       if (activeObject) {
         AppState.fabricCanvas.sendToBack(activeObject);
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
         console.log('[LayerManager] Objet envoyé à l\'arrière-plan');
       }
     },
@@ -259,7 +268,7 @@
       if (activeObject) {
         AppState.fabricCanvas.bringForward(activeObject);
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
         console.log('[LayerManager] Objet monté d\'un niveau');
       }
     },
@@ -272,7 +281,7 @@
       if (activeObject) {
         AppState.fabricCanvas.sendBackward(activeObject);
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
         console.log('[LayerManager] Objet descendu d\'un niveau');
       }
     },
@@ -297,7 +306,7 @@
           AppState.fabricCanvas.add(cloned);
           AppState.fabricCanvas.setActiveObject(cloned);
           AppState.fabricCanvas.renderAll();
-          HistoryManager.saveState();
+          if (window.HistoryManager) window.HistoryManager.saveState();
           console.log('[LayerManager] Objet dupliqué');
         });
       }
@@ -315,12 +324,13 @@
     alignLeft() {
       const activeObject = AppState.fabricCanvas.getActiveObject();
       if (activeObject) {
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) return;
         activeObject.set({
           left: zone.x + (activeObject.width * activeObject.scaleX) / 2
         });
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
       }
     },
 
@@ -330,13 +340,14 @@
     alignCenterH() {
       const activeObject = AppState.fabricCanvas.getActiveObject();
       if (activeObject) {
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) return;
         activeObject.set({
           left: zone.x + zone.w / 2
         });
         activeObject.setCoords();
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
       }
     },
 
@@ -346,12 +357,13 @@
     alignRight() {
       const activeObject = AppState.fabricCanvas.getActiveObject();
       if (activeObject) {
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) return;
         activeObject.set({
           left: zone.x + zone.w - (activeObject.width * activeObject.scaleX) / 2
         });
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
       }
     },
 
@@ -361,12 +373,13 @@
     alignTop() {
       const activeObject = AppState.fabricCanvas.getActiveObject();
       if (activeObject) {
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) return;
         activeObject.set({
           top: zone.y + (activeObject.height * activeObject.scaleY) / 2
         });
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
       }
     },
 
@@ -376,13 +389,14 @@
     alignCenterV() {
       const activeObject = AppState.fabricCanvas.getActiveObject();
       if (activeObject) {
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) return;
         activeObject.set({
           top: zone.y + zone.h / 2
         });
         activeObject.setCoords();
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
       }
     },
 
@@ -392,12 +406,13 @@
     alignBottom() {
       const activeObject = AppState.fabricCanvas.getActiveObject();
       if (activeObject) {
-        const zone = AppState.editableZones[AppState.currentView];
+        const zone = CanvasManager.getActiveZone(AppState.currentView);
+        if (!zone) return;
         activeObject.set({
           top: zone.y + zone.h - (activeObject.height * activeObject.scaleY) / 2
         });
         AppState.fabricCanvas.renderAll();
-        HistoryManager.saveState();
+        if (window.HistoryManager) window.HistoryManager.saveState();
       }
     },
 
@@ -407,100 +422,6 @@
     alignCenter() {
       this.alignCenterH();
       this.alignCenterV();
-    }
-  };
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // MODULE HISTORIQUE (UNDO/REDO)
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  const HistoryManager = {
-    isProcessing: false,
-
-    /**
-     * Sauvegarde l'état actuel du canvas
-     */
-    saveState() {
-      if (this.isProcessing || !AppState.fabricCanvas) return;
-
-      const json = AppState.fabricCanvas.toJSON();
-      
-      // Supprimer les états "futur" si on fait une nouvelle action après un undo
-      if (Phase2State.historyStep < Phase2State.history.length - 1) {
-        Phase2State.history = Phase2State.history.slice(0, Phase2State.historyStep + 1);
-      }
-
-      // Ajouter le nouvel état
-      Phase2State.history.push(json);
-
-      // Limiter la taille de l'historique
-      if (Phase2State.history.length > PHASE2_CONFIG.MAX_HISTORY) {
-        Phase2State.history.shift();
-      } else {
-        Phase2State.historyStep++;
-      }
-
-      this.updateButtons();
-    },
-
-    /**
-     * Annule la dernière action (Undo)
-     */
-    undo() {
-      if (Phase2State.historyStep > 0) {
-        this.isProcessing = true;
-        Phase2State.historyStep--;
-        
-        const state = Phase2State.history[Phase2State.historyStep];
-        AppState.fabricCanvas.loadFromJSON(state, () => {
-          AppState.fabricCanvas.renderAll();
-          this.isProcessing = false;
-          this.updateButtons();
-          console.log('[HistoryManager] Undo');
-        });
-      }
-    },
-
-    /**
-     * Refait l'action annulée (Redo)
-     */
-    redo() {
-      if (Phase2State.historyStep < Phase2State.history.length - 1) {
-        this.isProcessing = true;
-        Phase2State.historyStep++;
-        
-        const state = Phase2State.history[Phase2State.historyStep];
-        AppState.fabricCanvas.loadFromJSON(state, () => {
-          AppState.fabricCanvas.renderAll();
-          this.isProcessing = false;
-          this.updateButtons();
-          console.log('[HistoryManager] Redo');
-        });
-      }
-    },
-
-    /**
-     * Met à jour l'état des boutons undo/redo
-     */
-    updateButtons() {
-      const undoBtn = document.getElementById('btn-undo');
-      const redoBtn = document.getElementById('btn-redo');
-
-      if (undoBtn) {
-        undoBtn.disabled = Phase2State.historyStep <= 0;
-      }
-      if (redoBtn) {
-        redoBtn.disabled = Phase2State.historyStep >= Phase2State.history.length - 1;
-      }
-    },
-
-    /**
-     * Initialise l'historique avec l'état actuel
-     */
-    init() {
-      if (AppState.fabricCanvas) {
-        this.saveState();
-      }
     }
   };
 
@@ -525,177 +446,28 @@
      * Injecte les contrôles de formes
      */
     injectShapeControls() {
-      const controlsPanel = document.querySelector('.controls-panel');
-      if (!controlsPanel) return;
-
-      const shapeHTML = `
-        <div class="control-group is-collapsed phase2-shape-controls" id="group-shapes">
-          <h3 class="control-title">🔷 Ajouter une forme</h3>
-          
-          <div class="control-content">
-            <div class="shape-buttons">
-              ${PHASE2_CONFIG.SHAPES.map(shape => `
-                <button class="btn-shape" 
-                        data-shape="${shape.type}" 
-                        title="${shape.name}"
-                        type="button">
-                  ${shape.icon}
-                </button>
-              `).join('')}
-            </div>
-
-            <div class="shape-options" id="shape-options" style="display: none; margin-top: 1rem;">
-              
-              <!-- Couleur contour -->
-              <div class="form-group">
-                <label class="form-label">Contour</label>
-                <input type="color" id="shape-stroke-color" class="form-input" value="#000000">
-              </div>
-
-              <!-- Couleur remplissage -->
-              <div class="form-group">
-                <label class="form-label">Remplissage</label>
-                <div style="display: flex; gap: 0.5rem;">
-                  <input type="color" id="shape-fill-color" class="form-input" value="#000000" style="flex: 1;">
-                  <button class="btn btn-secondary" id="btn-no-fill" title="Pas de remplissage" type="button">
-                    ∅
-                  </button>
-                </div>
-              </div>
-
-              <!-- Épaisseur -->
-              <div class="form-group">
-                <label class="form-label">Épaisseur: <span id="stroke-width-value">2</span>px</label>
-                <input type="range" id="shape-stroke-width" class="form-range" min="1" max="10" value="2">
-              </div>
-
-            </div>
-          </div>
-        </div>
-      `;
-
-      const actionsGroup = document.getElementById('group-actions');
-      if (actionsGroup) {
-        actionsGroup.insertAdjacentHTML('beforebegin', shapeHTML);
-      }
+      // Les contrôles sont déclarés statiquement dans le template configurateur.liquid
     },
 
     /**
      * Injecte les contrôles de calques
      */
     injectLayerControls() {
-      const controlsPanel = document.querySelector('.controls-panel');
-      if (!controlsPanel) return;
-
-      const layerHTML = `
-        <div class="control-group is-collapsed phase2-layer-controls" id="group-layers">
-          <h3 class="control-title">📚 Gestion des calques</h3>
-          
-          <div class="control-content">
-            <div class="layer-buttons-grid">
-              <button class="btn btn-icon-small" id="btn-bring-front" title="Premier plan" type="button">
-                ⬆⬆
-              </button>
-              <button class="btn btn-icon-small" id="btn-bring-forward" title="Monter" type="button">
-                ⬆
-              </button>
-              <button class="btn btn-icon-small" id="btn-send-backward" title="Descendre" type="button">
-                ⬇
-              </button>
-              <button class="btn btn-icon-small" id="btn-send-back" title="Arrière-plan" type="button">
-                ⬇⬇
-              </button>
-              <button class="btn btn-icon-small" id="btn-duplicate" title="Dupliquer" type="button">
-                📄
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const actionsGroup = document.getElementById('group-actions');
-      if (actionsGroup) {
-        actionsGroup.insertAdjacentHTML('beforebegin', layerHTML);
-      }
+      // Les contrôles sont déclarés statiquement dans le template configurateur.liquid
     },
 
     /**
      * Injecte les contrôles d'alignement
      */
     injectAlignmentControls() {
-      const controlsPanel = document.querySelector('.controls-panel');
-      if (!controlsPanel) return;
-
-      const alignHTML = `
-        <div class="control-group is-collapsed phase2-align-controls" id="group-align">
-          <h3 class="control-title">📐 Alignement</h3>
-          
-          <div class="control-content">
-            <div class="align-grid">
-              <button class="btn btn-icon-small" id="btn-align-left" title="Gauche" type="button">
-                ⊣
-              </button>
-              <button class="btn btn-icon-small" id="btn-align-center-h" title="Centre H" type="button">
-                ⊢⊣
-              </button>
-              <button class="btn btn-icon-small" id="btn-align-right" title="Droite" type="button">
-                ⊢
-              </button>
-              <button class="btn btn-icon-small" id="btn-align-top" title="Haut" type="button">
-                ⊤
-              </button>
-              <button class="btn btn-icon-small" id="btn-align-center-v" title="Centre V" type="button">
-                ⊥⊤
-              </button>
-              <button class="btn btn-icon-small" id="btn-align-bottom" title="Bas" type="button">
-                ⊥
-              </button>
-              <button class="btn btn-icon-small" id="btn-align-center" title="Centrer" type="button">
-                ⊕
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const actionsGroup = document.getElementById('group-actions');
-      if (actionsGroup) {
-        actionsGroup.insertAdjacentHTML('beforebegin', alignHTML);
-      }
+      // Les contrôles sont déclarés statiquement dans le template configurateur.liquid
     },
 
     /**
      * Injecte les contrôles d'historique
      */
     injectHistoryControls() {
-      const controlsPanel = document.querySelector('.controls-panel');
-      if (!controlsPanel) return;
-
-      const historyHTML = `
-        <div class="control-group is-collapsed phase2-history-controls" id="group-history">
-          <h3 class="control-title">⏮️ Historique</h3>
-          
-          <div class="control-content">
-            <div style="display: flex; gap: 0.5rem;">
-              <button class="btn btn-secondary" id="btn-undo" title="Annuler (Ctrl+Z)" type="button" disabled style="flex: 1;">
-                ↶ Annuler
-              </button>
-              <button class="btn btn-secondary" id="btn-redo" title="Refaire (Ctrl+Y)" type="button" disabled style="flex: 1;">
-                ↷ Refaire
-              </button>
-            </div>
-
-            <p style="font-size: 0.75rem; color: #666; margin-top: 0.5rem; margin-bottom: 0;">
-              Raccourcis : Ctrl+Z / Ctrl+Y
-            </p>
-          </div>
-        </div>
-      `;
-
-      const actionsGroup = document.getElementById('group-actions');
-      if (actionsGroup) {
-        actionsGroup.insertAdjacentHTML('beforebegin', historyHTML);
-      }
+      // Les contrôles sont déclarés statiquement dans le template configurateur.liquid
     },
 
     /**
@@ -705,7 +477,8 @@
       // Boutons de formes
       document.querySelectorAll('.btn-shape').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const shapeType = e.target.dataset.shape;
+          const shapeType = e.currentTarget.dataset.shape;
+          if (!shapeType) return;
           ShapeManager.addShape(shapeType);
           this.showShapeOptions();
         });
@@ -752,44 +525,25 @@
       document.getElementById('btn-align-bottom')?.addEventListener('click', () => AlignmentManager.alignBottom());
       document.getElementById('btn-align-center')?.addEventListener('click', () => AlignmentManager.alignCenter());
 
-      // Boutons d'historique
-      document.getElementById('btn-undo')?.addEventListener('click', () => HistoryManager.undo());
-      document.getElementById('btn-redo')?.addEventListener('click', () => HistoryManager.redo());
+      this.setupCanvasEventListeners();
+    },
 
-      // Raccourcis clavier
-      document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          if (e.key === 'z' || e.key === 'Z') {
-            e.preventDefault();
-            HistoryManager.undo();
-          } else if (e.key === 'y' || e.key === 'Y') {
-            e.preventDefault();
-            HistoryManager.redo();
-          }
+    setupCanvasEventListeners() {
+      if (!AppState.fabricCanvas) return;
+
+      AppState.fabricCanvas.on('selection:created', (e) => {
+        const obj = e.selected[0];
+        if (obj && (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'triangle' || obj.type === 'polygon' || obj.type === 'line')) {
+          this.showShapeOptions();
         }
       });
 
-      // Afficher les options quand une forme est sélectionnée
-      if (AppState.fabricCanvas) {
-        AppState.fabricCanvas.on('selection:created', (e) => {
-          const obj = e.selected[0];
-          if (obj && (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'triangle' || obj.type === 'polygon' || obj.type === 'line')) {
-            this.showShapeOptions();
-          }
-        });
-
-        AppState.fabricCanvas.on('selection:updated', (e) => {
-          const obj = e.selected[0];
-          if (obj && (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'triangle' || obj.type === 'polygon' || obj.type === 'line')) {
-            this.showShapeOptions();
-          }
-        });
-
-        // Sauvegarder dans l'historique après modification
-        AppState.fabricCanvas.on('object:modified', () => {
-          HistoryManager.saveState();
-        });
-      }
+      AppState.fabricCanvas.on('selection:updated', (e) => {
+        const obj = e.selected[0];
+        if (obj && (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'triangle' || obj.type === 'polygon' || obj.type === 'line')) {
+          this.showShapeOptions();
+        }
+      });
     },
 
     /**
@@ -960,23 +714,24 @@
   // INITIALISATION
   // ══════════════════════════════════════════════════════════════════════════════
 
-  // Attendre que le DOM soit prêt et que le canvas soit initialisé
+  let phase2Initialized = false;
+
   function initPhase2() {
-    // Vérifier que le canvas existe
-    if (!AppState.fabricCanvas) {
-      console.log('[Phase2] Canvas pas encore initialisé, attente...');
-      setTimeout(initPhase2, 500);
-      return;
+    if (!AppState.fabricCanvas) return;
+
+    if (!phase2Initialized) {
+      UI2Manager.init();
+      phase2Initialized = true;
+    } else {
+      UI2Manager.setupCanvasEventListeners();
     }
 
-    UI2Manager.init();
-    HistoryManager.init();
-    console.log('[Phase2] ✅ Fonctionnalités Formes + Calques + Alignement + Historique activées');
+    console.log('[Phase2] ✅ Fonctionnalités Formes + Calques + Alignement activées');
   }
 
-  // Lancer l'initialisation - attendre d'abord que AppState soit disponible
   waitForConfigurator(() => {
     console.log('[Phase2] Configurateur principal détecté, initialisation...');
+    window.addEventListener('configurator:canvas-ready', initPhase2);
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initPhase2);
     } else {
@@ -989,7 +744,6 @@
     ShapeManager,
     LayerManager,
     AlignmentManager,
-    HistoryManager,
     CONFIG: PHASE2_CONFIG,
     State: Phase2State
   };

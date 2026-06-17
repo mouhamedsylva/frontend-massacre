@@ -3,10 +3,10 @@
   Section principale du module de customisation multi-vues
   
   Metafields utilisés pour chaque produit :
-  - product.metafields.custom.view_front_image : Image de la vue Face
-  - product.metafields.custom.view_back_image : Image de la vue Dos
-  - product.metafields.custom.view_left_image : Image de la vue Gauche
-  - product.metafields.custom.view_right_image : Image de la vue Droite
+  - product.metafields.custom.image_front : Image de la vue Face
+  - product.metafields.custom.image_back : Image de la vue Dos
+  - product.metafields.custom.image_left : Image de la vue Gauche
+  - product.metafields.custom.image_right : Image de la vue Droite
   - product.metafields.custom.editable_zones : JSON avec les coordonnées des zones éditables
 {% endcomment %}
 
@@ -15,6 +15,11 @@
 <script src="{{ 'configurateur.js' | asset_url }}" defer></script>
 <script src="{{ 'configurateur-phase1.js' | asset_url }}" defer></script>
 <script src="{{ 'configurateur-phase2.js' | asset_url }}" defer></script>
+<script src="{{ 'text-advanced-controls.js' | asset_url }}" defer></script>
+<script src="{{ 'text-floating-actions.js' | asset_url }}" defer></script>
+<script src="{{ 'product-color-changer.js' | asset_url }}" defer></script>
+<script src="{{ 'history-manager.js' | asset_url }}" defer></script>
+<script src="{{ 'preview-submit.js' | asset_url }}" defer></script>
 
 <div class="configurateur-container" id="configurateur-app">
   
@@ -30,14 +35,49 @@
         {% if block.type == 'product' %}
           {% assign product = block.settings.product %}
           {% if product %}
-            {%- comment -%}
-              Pour les metafields de type "Single line text" (URL externe),
-              utiliser directement .value — le filtre image_url est réservé aux types File/Image.
-            {%- endcomment -%}
-            {%- assign front_image = product.metafields.custom.image_front.value -%}
-            {%- assign back_image  = product.metafields.custom.image_back.value -%}
-            {%- assign left_image  = product.metafields.custom.image_left.value -%}
-            {%- assign right_image = product.metafields.custom.image_right.value -%}
+            {%- liquid
+              assign front_image = ""
+              assign back_image  = ""
+              assign left_image  = ""
+              assign right_image = ""
+
+              assign front_image_val = product.metafields.custom.image_front.value
+              assign back_image_val  = product.metafields.custom.image_back.value
+              assign left_image_val  = product.metafields.custom.image_left.value
+              assign right_image_val = product.metafields.custom.image_right.value
+
+              if front_image_val != blank
+                if front_image_val.preview_image
+                  assign front_image = front_image_val | image_url: width: 1200
+                else
+                  assign front_image = front_image_val
+                endif
+              endif
+
+              if back_image_val != blank
+                if back_image_val.preview_image
+                  assign back_image = back_image_val | image_url: width: 1200
+                else
+                  assign back_image = back_image_val
+                endif
+              endif
+
+              if left_image_val != blank
+                if left_image_val.preview_image
+                  assign left_image = left_image_val | image_url: width: 1200
+                else
+                  assign left_image = left_image_val
+                endif
+              endif
+
+              if right_image_val != blank
+                if right_image_val.preview_image
+                  assign right_image = right_image_val | image_url: width: 1200
+                else
+                  assign right_image = right_image_val
+                endif
+              endif
+            -%}
 
             <div class="product-card" 
                  data-product-id="{{ product.id }}"
@@ -85,51 +125,42 @@
       <h2 class="editor-product-title" id="selected-product-title">Produit sélectionné</h2>
     </div>
 
-    <div class="editor-layout">
+    <div class="editor-layout customink-style">
       
-      {%- comment -%} ────────────────────────────────────────────────────────
-        2.1 SÉLECTEUR DE VUES (4 onglets)
-      ──────────────────────────────────────────────────────────── {%- endcomment -%}
-      <div class="view-selector">
-        <button class="view-tab active" data-view="front" type="button">
-          <span class="view-icon">👕</span>
-          <span class="view-label">Face</span>
-        </button>
-        <button class="view-tab" data-view="back" type="button">
-          <span class="view-icon">👕</span>
-          <span class="view-label">Dos</span>
-        </button>
-        <button class="view-tab" data-view="left" type="button">
-          <span class="view-icon">👕</span>
-          <span class="view-label">Gauche</span>
-        </button>
-        <button class="view-tab" data-view="right" type="button">
-          <span class="view-icon">👕</span>
-          <span class="view-label">Droite</span>
-        </button>
-      </div>
-
-      <div class="editor-main">
+      <!-- GAUCHE : Sidebar Simplifiée -->
+      <div class="editor-sidebar-container">
         
-        {%- comment -%} ────────────────────────────────────────────────────
-          2.2 CANVAS FABRIC.JS
-        ──────────────────────────────────────────────────────────── {%- endcomment -%}
-        <div class="canvas-wrapper">
-          <canvas id="customization-canvas"></canvas>
-          <div class="canvas-loader" id="canvas-loader" style="display: none;">
-            <div class="spinner"></div>
-            <p>Chargement...</p>
-          </div>
+        <!-- Barre verticale d'icônes (4 onglets seulement) -->
+        <div class="sidebar-icons-nav">
+          <button class="nav-icon-btn active" data-tab="tab-upload" type="button" title="Upload">
+            <span class="btn-icon">📤</span>
+            <span class="btn-label">Upload</span>
+          </button>
+          <button class="nav-icon-btn" data-tab="tab-text" type="button" title="Texte">
+            <span class="btn-icon">Aa</span>
+            <span class="btn-label">Texte</span>
+          </button>
+          <button class="nav-icon-btn" data-tab="tab-cliparts" type="button" title="Cliparts">
+            <span class="btn-icon">🎨</span>
+            <span class="btn-label">Arts</span>
+          </button>
+          <button class="nav-icon-btn" data-tab="tab-shapes" type="button" title="Formes">
+            <span class="btn-icon">🔷</span>
+            <span class="btn-label">Formes</span>
+          </button>
+          <button class="nav-icon-btn" data-tab="tab-colors" type="button" title="Couleurs">
+            <span class="btn-icon">🎨</span>
+            <span class="btn-label">Couleurs</span>
+          </button>
         </div>
 
-        {%- comment -%} ────────────────────────────────────────────────────
-          2.3 PANNEAU DE CONTRÔLE
-        ──────────────────────────────────────────────────────────── {%- endcomment -%}
-        <div class="controls-panel">
+        <!-- Panneau de contenu de l'onglet actif -->
+        <div class="sidebar-tabs-content">
           
-          <div class="control-group" id="group-upload">
-            <h3 class="control-title">📷 Ajouter votre design</h3>
-            <div class="control-content">
+          <!-- 1. Onglet UPLOAD -->
+          <div class="tab-panel active" id="tab-upload">
+            
+            <div class="upload-zone-wrapper">
               <div class="upload-zone" id="upload-zone">
                 <input type="file" 
                        id="image-upload-input" 
@@ -142,109 +173,429 @@
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
-                  <span class="upload-text">Cliquez ou glissez-déposez une image</span>
+                  <span class="upload-text">Cliquez ou glissez-déposez</span>
                   <span class="upload-hint">PNG ou JPEG, max 5 Mo</span>
                 </label>
               </div>
             </div>
-          </div>
 
-          <div class="control-group is-collapsed" id="group-actions">
-            <h3 class="control-title">🎨 Actions</h3>
-            <div class="control-content">
+            <div class="tab-actions-group" style="margin-top: 1.5rem;">
+              <h4 class="sub-tab-title">Actions sur l'élément</h4>
               <button class="btn btn-secondary btn-full" id="btn-delete-selected" type="button" disabled style="margin-bottom: 0.5rem;">
                 🗑️ Supprimer la sélection
               </button>
-              
               <button class="btn btn-secondary btn-full" id="btn-clear-view" type="button">
                 🧹 Effacer cette vue
               </button>
             </div>
           </div>
 
-          <div class="control-group is-collapsed" id="group-help">
-            <h3 class="control-title">ℹ️ Aide</h3>
-            <div class="control-content">
-              <ul class="help-list">
-                <li>Glissez pour déplacer votre design</li>
-                <li>Redimensionnez avec les poignées</li>
-                <li>Faites pivoter avec la poignée du haut</li>
-                <li>Les éléments hors zone seront masqués</li>
-              </ul>
+          <!-- 2. Onglet TEXTE (Style CustomInk) -->
+          <div class="tab-panel" id="tab-text">
+            
+            <!-- Zone d'écriture type CustomInk -->
+            <div class="customink-text-entry">
+              <label class="form-label">Entrez votre texte ici :</label>
+              <textarea id="text-input" class="customink-textarea" placeholder="Tapez votre texte...">papa</textarea>
+              <button class="btn btn-primary btn-full" id="btn-add-text" type="button">
+                ➕ Ajouter au design
+              </button>
+            </div>
+
+            <!-- Panneau de contrôle des options -->
+            <div class="text-controls-panel">
+              
+              <!-- 1. Font Selection -->
+              <div class="control-row">
+                <label class="control-label">Police d'écriture</label>
+                <div class="font-selector-wrapper">
+                  <select id="text-font" class="font-select">
+                    <option value="Arial" selected>Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Impact">Impact</option>
+                    <option value="Comic Sans MS">Comic Sans MS</option>
+                    <option value="Brush Script MT">Brush Script MT</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 2. Color Selection (Palette compacte) -->
+              <div class="control-row">
+                <label class="control-label">Couleur du texte</label>
+                <div class="compact-palette" id="text-color-palette">
+                  <button class="palette-color active" data-color="#000000" style="background: #000000;" title="Noir" type="button"></button>
+                  <button class="palette-color" data-color="#FFFFFF" style="background: #FFFFFF; border: 1px solid #ddd;" title="Blanc" type="button"></button>
+                  <button class="palette-color" data-color="#FF0000" style="background: #FF0000;" title="Rouge" type="button"></button>
+                  <button class="palette-color" data-color="#0000FF" style="background: #0000FF;" title="Bleu" type="button"></button>
+                  <button class="palette-color" data-color="#008000" style="background: #008000;" title="Vert" type="button"></button>
+                  <button class="palette-color" data-color="#FFFF00" style="background: #FFFF00;" title="Jaune" type="button"></button>
+                  <button class="palette-color" data-color="#FFA500" style="background: #FFA500;" title="Orange" type="button"></button>
+                  <button class="palette-color" data-color="#800080" style="background: #800080;" title="Violet" type="button"></button>
+                </div>
+              </div>
+
+              <!-- 3. Size & Rotation -->
+              <div class="control-grid-2">
+                <div class="control-row">
+                  <label class="control-label">Taille</label>
+                  <div class="input-with-unit">
+                    <input type="number" id="text-size-value" value="48" min="10" max="200">
+                    <span>px</span>
+                  </div>
+                </div>
+                <div class="control-row">
+                  <label class="control-label">Rotation</label>
+                  <div class="input-with-unit">
+                    <input type="number" id="text-rotation-value" value="0" min="-180" max="180">
+                    <span>°</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slider de secours (masqué mais utilisé par le script) -->
+              <input type="range" id="text-size-slider" style="display:none;" min="10" max="200" value="48">
+              <input type="range" id="text-rotation-slider" style="display:none;" min="-180" max="180" value="0">
+
+              <!-- 4. Style (B, I, U) + Alignement -->
+              <div class="control-row">
+                <label class="control-label">Style & Alignement</label>
+                <div class="toolbar-group">
+                  <div class="btn-group">
+                    <button class="tool-btn" id="btn-text-bold" title="Gras" type="button"><b>B</b></button>
+                    <button class="tool-btn" id="btn-text-italic" title="Italique" type="button"><i>I</i></button>
+                  </div>
+                  <div class="btn-group">
+                    <button class="tool-btn" id="btn-text-align-left" title="Gauche" type="button">▤</button>
+                    <button class="tool-btn" id="btn-text-align-center" title="Centre" type="button">▥</button>
+                    <button class="tool-btn" id="btn-text-align-right" title="Droite" type="button">▧</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. Actions rapides -->
+              <div class="control-row">
+                <div class="quick-actions">
+                  <button class="btn btn-secondary btn-sm" id="btn-text-center" type="button">🎯 Centrer</button>
+                  <button class="btn btn-secondary btn-sm" id="btn-text-duplicate" type="button">👯 Dupliquer</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 3. Onglet MOTIFS -->
+          <div class="tab-panel" id="tab-cliparts">
+            <div class="form-group">
+              <label class="form-label">Catégorie</label>
+              <select id="clipart-category" class="form-input">
+                <option value="Formes">Formes</option>
+                <option value="Symboles">Symboles</option>
+                <option value="Musique">Musique</option>
+                <option value="Sport">Sport</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Animaux">Animaux</option>
+              </select>
+            </div>
+
+            <div class="clipart-grid" id="clipart-grid" style="margin-top: 1rem;">
+              <button class="clipart-item" data-emoji="⭐" data-name="Étoile" title="Étoile" type="button">⭐</button>
+              <button class="clipart-item" data-emoji="❤️" data-name="Cœur" title="Cœur" type="button">❤️</button>
+              <button class="clipart-item" data-emoji="🌟" data-name="Étoile brillante" title="Étoile brillante" type="button">🌟</button>
+              <button class="clipart-item" data-emoji="💎" data-name="Diamant" title="Diamant" type="button">💎</button>
+            </div>
+          </div>
+
+          <!-- 4. Onglet FORMES -->
+          <div class="tab-panel" id="tab-shapes">
+            <div class="phase2-shape-controls">
+              <div class="form-group">
+                <label class="form-label">Formes géométriques</label>
+                <div class="shape-buttons">
+                  <button class="btn-shape" data-shape="rect" title="Rectangle" type="button">▭</button>
+                  <button class="btn-shape" data-shape="circle" title="Cercle" type="button">●</button>
+                  <button class="btn-shape" data-shape="triangle" title="Triangle" type="button">▲</button>
+                  <button class="btn-shape" data-shape="star" title="Étoile" type="button">⭐</button>
+                  <button class="btn-shape" data-shape="line" title="Ligne" type="button">─</button>
+                </div>
+              </div>
+
+              <div id="shape-options" style="display: none; margin-top: 1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="shape-stroke-color">Couleur du contour</label>
+                  <input type="color" id="shape-stroke-color" class="form-input" value="#000000">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shape-fill-color">Couleur de remplissage</label>
+                  <input type="color" id="shape-fill-color" class="form-input" value="#ffffff">
+                  <button class="btn btn-secondary btn-sm" id="btn-no-fill" type="button" style="margin-top: 0.5rem;">
+                    Sans remplissage
+                  </button>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="shape-stroke-width">Épaisseur du contour (<span id="stroke-width-value">2</span>px)</label>
+                  <input type="range" id="shape-stroke-width" class="form-range" min="1" max="20" value="2">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Onglet COULEURS -->
+          <div class="tab-panel" id="tab-colors">
+            <div class="form-group">
+              <label class="form-label" style="margin-bottom: 1rem; display: block; font-weight: 600;">Couleur du Produit</label>
+              
+              <!-- Palette complète de couleurs -->
+              <div class="color-palette-grid">
+                <!-- Blanc & Gris -->
+                <button class="color-btn" data-color="#FFFFFF" style="background: #FFFFFF; border: 2px solid #ddd;" title="Blanc"></button>
+                <button class="color-btn" data-color="#F5F5F5" style="background: #F5F5F5;" title="Gris très clair"></button>
+                <button class="color-btn" data-color="#E0E0E0" style="background: #E0E0E0;" title="Gris clair"></button>
+                <button class="color-btn" data-color="#BDBDBD" style="background: #BDBDBD;" title="Gris"></button>
+                <button class="color-btn" data-color="#9E9E9E" style="background: #9E9E9E;" title="Gris moyen"></button>
+                <button class="color-btn" data-color="#757575" style="background: #757575;" title="Gris foncé"></button>
+                <button class="color-btn" data-color="#616161" style="background: #616161;" title="Gris très foncé"></button>
+                <button class="color-btn" data-color="#000000" style="background: #000000;" title="Noir"></button>
+                <button class="color-btn" data-color="#263238" style="background: #263238;" title="Bleu nuit"></button>
+                <button class="color-btn" data-color="#37474F" style="background: #37474F;" title="Bleu gris"></button>
+                <button class="color-btn" data-color="#546E7A" style="background: #546E7A;" title="Bleu gris clair"></button>
+                
+                <!-- Bleus -->
+                <button class="color-btn" data-color="#607D8B" style="background: #607D8B;" title="Bleu ardoise"></button>
+                <button class="color-btn" data-color="#78909C" style="background: #78909C;" title="Bleu ciel foncé"></button>
+                <button class="color-btn" data-color="#1E3A5F" style="background: #1E3A5F;" title="Bleu marine"></button>
+                <button class="color-btn" data-color="#003366" style="background: #003366;" title="Bleu royal foncé"></button>
+                <button class="color-btn" data-color="#1565C0" style="background: #1565C0;" title="Bleu"></button>
+                <button class="color-btn" data-color="#0277BD" style="background: #0277BD;" title="Bleu vif"></button>
+                <button class="color-btn" data-color="#42A5F5" style="background: #42A5F5;" title="Bleu ciel"></button>
+                <button class="color-btn" data-color="#64B5F6" style="background: #64B5F6;" title="Bleu clair"></button>
+                <button class="color-btn" data-color="#90CAF9" style="background: #90CAF9;" title="Bleu pastel"></button>
+                <button class="color-btn" data-color="#BBDEFB" style="background: #BBDEFB;" title="Bleu très clair"></button>
+                <button class="color-btn" data-color="#00BCD4" style="background: #00BCD4;" title="Cyan"></button>
+                
+                <!-- Teals & Verts -->
+                <button class="color-btn" data-color="#0097A7" style="background: #0097A7;" title="Teal foncé"></button>
+                <button class="color-btn" data-color="#00ACC1" style="background: #00ACC1;" title="Teal"></button>
+                <button class="color-btn" data-color="#26C6DA" style="background: #26C6DA;" title="Cyan clair"></button>
+                <button class="color-btn" data-color="#4DD0E1" style="background: #4DD0E1;" title="Cyan pastel"></button>
+                <button class="color-btn" data-color="#80DEEA" style="background: #80DEEA;" title="Aqua"></button>
+                <button class="color-btn" data-color="#00897B" style="background: #00897B;" title="Teal vert"></button>
+                <button class="color-btn" data-color="#009688" style="background: #009688;" title="Teal vert vif"></button>
+                <button class="color-btn" data-color="#26A69A" style="background: #26A69A;" title="Teal moyen"></button>
+                <button class="color-btn" data-color="#004D40" style="background: #004D40;" title="Vert foncé"></button>
+                <button class="color-btn" data-color="#2E7D32" style="background: #2E7D32;" title="Vert forêt"></button>
+                <button class="color-btn" data-color="#388E3C" style="background: #388E3C;" title="Vert"></button>
+                
+                <!-- Verts -->
+                <button class="color-btn" data-color="#43A047" style="background: #43A047;" title="Vert vif"></button>
+                <button class="color-btn" data-color="#66BB6A" style="background: #66BB6A;" title="Vert clair"></button>
+                <button class="color-btn" data-color="#81C784" style="background: #81C784;" title="Vert pastel"></button>
+                <button class="color-btn" data-color="#558B2F" style="background: #558B2F;" title="Vert olive foncé"></button>
+                <button class="color-btn" data-color="#689F38" style="background: #689F38;" title="Vert olive"></button>
+                <button class="color-btn" data-color="#7CB342" style="background: #7CB342;" title="Vert lime foncé"></button>
+                <button class="color-btn" data-color="#9CCC65" style="background: #9CCC65;" title="Vert lime"></button>
+                <button class="color-btn" data-color="#AED581" style="background: #AED581;" title="Vert lime clair"></button>
+                <button class="color-btn" data-color="#C5E1A5" style="background: #C5E1A5;" title="Vert menthe"></button>
+                <button class="color-btn" data-color="#DCEDC8" style="background: #DCEDC8;" title="Vert très clair"></button>
+                
+                <!-- Jaunes & Oranges -->
+                <button class="color-btn" data-color="#FFF59D" style="background: #FFF59D;" title="Jaune pastel"></button>
+                <button class="color-btn" data-color="#FFEB3B" style="background: #FFEB3B;" title="Jaune vif"></button>
+                <button class="color-btn" data-color="#FFA726" style="background: #FFA726;" title="Orange"></button>
+                
+                <!-- Rouges & Roses -->
+                <button class="color-btn" data-color="#FFAB91" style="background: #FFAB91;" title="Corail clair"></button>
+                <button class="color-btn" data-color="#FF8A65" style="background: #FF8A65;" title="Corail"></button>
+                <button class="color-btn" data-color="#FF7043" style="background: #FF7043;" title="Orange rouge"></button>
+                <button class="color-btn" data-color="#8D6E63" style="background: #8D6E63;" title="Marron"></button>
+                <button class="color-btn" data-color="#D32F2F" style="background: #D32F2F;" title="Rouge foncé"></button>
+                <button class="color-btn" data-color="#F44336" style="background: #F44336;" title="Rouge"></button>
+                <button class="color-btn" data-color="#C2185B" style="background: #C2185B;" title="Rose foncé"></button>
+                <button class="color-btn" data-color="#AD1457" style="background: #AD1457;" title="Magenta foncé"></button>
+                <button class="color-btn" data-color="#880E4F" style="background: #880E4F;" title="Rose pourpre"></button>
+                <button class="color-btn" data-color="#6A1B9A" style="background: #6A1B9A;" title="Violet foncé"></button>
+                <button class="color-btn" data-color="#4A148C" style="background: #4A148C;" title="Pourpre foncé"></button>
+                
+                <!-- Violets -->
+                <button class="color-btn" data-color="#512DA8" style="background: #512DA8;" title="Violet"></button>
+                <button class="color-btn" data-color="#673AB7" style="background: #673AB7;" title="Violet profond"></button>
+                <button class="color-btn" data-color="#7E57C2" style="background: #7E57C2;" title="Violet moyen"></button>
+                <button class="color-btn" data-color="#9575CD" style="background: #9575CD;" title="Violet clair"></button>
+                <button class="color-btn" data-color="#B39DDB" style="background: #B39DDB;" title="Lilas"></button>
+                <button class="color-btn" data-color="#D1C4E9" style="background: #D1C4E9;" title="Lilas clair"></button>
+                <button class="color-btn" data-color="#BA68C8" style="background: #BA68C8;" title="Orchidée"></button>
+                <button class="color-btn" data-color="#CE93D8" style="background: #CE93D8;" title="Rose violet"></button>
+                <button class="color-btn" data-color="#F48FB1" style="background: #F48FB1;" title="Rose"></button>
+                <button class="color-btn" data-color="#F06292" style="background: #F06292;" title="Rose vif"></button>
+                
+                <!-- Beiges & Taupes -->
+                <button class="color-btn" data-color="#EFEBE9" style="background: #EFEBE9;" title="Beige très clair"></button>
+                <button class="color-btn" data-color="#4E342E" style="background: #4E342E;" title="Brun foncé"></button>
+                <button class="color-btn" data-color="#A1887F" style="background: #A1887F;" title="Taupe"></button>
+                <button class="color-btn" data-color="#BCAAA4" style="background: #BCAAA4;" title="Beige"></button>
+                <button class="color-btn" data-color="#D7CCC8" style="background: #D7CCC8;" title="Beige clair"></button>
+                <button class="color-btn" data-color="#F5F5DC" style="background: #F5F5DC;" title="Beige ivoire"></button>
+                <button class="color-btn" data-color="#FFF8DC" style="background: #FFF8DC;" title="Crème"></button>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <button class="btn btn-secondary btn-full" id="btn-reset-product-color" type="button">
+                ↻ Réinitialiser la couleur
+              </button>
             </div>
           </div>
 
         </div>
       </div>
 
-      <script>
-        window.CONFIGURATEUR_CONFIG = {
-          apiEndpoint: {{ settings.microservice_api_url | json }},
-          debugMode: {{ settings.enable_debug_mode | json }}
-        };
-      </script>
-
-      {%- comment -%} ────────────────────────────────────────────────────────
-        2.4 FORMULAIRE DE SOUMISSION
-      ──────────────────────────────────────────────────────────── {%- endcomment -%}
-      <div class="submission-section">
-        <h3 class="submission-title">💬 Demander votre devis personnalisé</h3>
+      <!-- CENTRE : Espace de travail du Canvas -->
+      <div class="canvas-workspace">
         
-        <form id="devis-form" class="devis-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="customer-firstname" class="form-label">Prénom *</label>
-              <input type="text" 
-                     id="customer-firstname" 
-                     name="first_name" 
-                     class="form-input" 
-                     required 
-                     autocomplete="given-name">
+        <!-- Boutons Undo/Redo flottants (style Custom Ink) -->
+        <div class="undo-redo-buttons">
+          <button class="history-btn" id="btn-undo" type="button" title="Annuler (Ctrl+Z)" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7v6h6"></path>
+              <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+            </svg>
+            <span class="history-label">Undo</span>
+          </button>
+          <button class="history-btn" id="btn-redo" type="button" title="Refaire (Ctrl+Y)" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 7v6h-6"></path>
+              <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path>
+            </svg>
+            <span class="history-label">Redo</span>
+          </button>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="customization-canvas"></canvas>
+          <div class="canvas-loader" id="canvas-loader" style="display: none;">
+            <div class="spinner"></div>
+            <p>Chargement...</p>
+          </div>
+        </div>
+        
+        <!-- DROITE : Sélecteur de vues flottant avec vignettes -->
+        <div class="floating-view-selector">
+          <button class="view-thumbnail-btn active" data-view="front" type="button" id="btn-view-front">
+            <div class="thumbnail-img-container">
+              <img id="view-thumbnail-front" src="" alt="Face" width="200" height="200">
             </div>
-            
-            <div class="form-group">
-              <label for="customer-lastname" class="form-label">Nom *</label>
-              <input type="text" 
-                     id="customer-lastname" 
-                     name="last_name" 
-                     class="form-input" 
-                     required 
-                     autocomplete="family-name">
+            <span class="thumbnail-label">Face</span>
+          </button>
+          <button class="view-thumbnail-btn" data-view="back" type="button" id="btn-view-back">
+            <div class="thumbnail-img-container">
+              <img id="view-thumbnail-back" src="" alt="Dos" width="200" height="200">
             </div>
-          </div>
-
-          <div class="form-group">
-            <label for="customer-email" class="form-label">Email *</label>
-            <input type="email" 
-                   id="customer-email" 
-                   name="email" 
-                   class="form-input" 
-                   required 
-                   autocomplete="email">
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-full" id="btn-submit-devis">
-              ✉️ Envoyer ma demande de devis
-            </button>
-          </div>
-
-          <p class="form-disclaimer">
-            Notre équipe vérifiera votre design et vous enverra un devis personnalisé sous 24–48h.
-          </p>
-        </form>
-
-        <div class="submission-feedback" id="submission-feedback" style="display: none;"></div>
+            <span class="thumbnail-label">Dos</span>
+          </button>
+          <button class="view-thumbnail-btn" data-view="left" type="button" id="btn-view-left">
+            <div class="thumbnail-img-container">
+              <img id="view-thumbnail-left" src="" alt="Gauche" width="200" height="200">
+            </div>
+            <span class="thumbnail-label">Gauche</span>
+          </button>
+          <button class="view-thumbnail-btn" data-view="right" type="button" id="btn-view-right">
+            <div class="thumbnail-img-container">
+              <img id="view-thumbnail-right" src="" alt="Droite" width="200" height="200">
+            </div>
+            <span class="thumbnail-label">Droite</span>
+          </button>
+        </div>
       </div>
 
     </div>
+
+    <!-- Bouton d'action principal (Preview & Submit) -->
+    <div class="main-actions-bar">
+      <button class="btn btn-preview" id="btn-preview-design" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        Aperçu du Design
+      </button>
+      <button class="btn btn-primary btn-submit" id="btn-submit-design" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        Envoyer le Design
+      </button>
+    </div>
+
+    <!-- Modal de Preview -->
+    <div class="preview-modal" id="preview-modal" style="display: none;">
+      <div class="preview-modal-overlay" id="preview-modal-overlay"></div>
+      <div class="preview-modal-content">
+        <div class="preview-modal-header">
+          <h2 class="preview-modal-title">Aperçu de votre Design</h2>
+          <button class="preview-modal-close" id="btn-close-preview" type="button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="preview-modal-body">
+          <div class="preview-views-grid">
+            <div class="preview-view-item">
+              <h3 class="preview-view-label">Face</h3>
+              <div class="preview-image-container">
+                <img id="preview-img-front" src="" alt="Face" class="preview-image">
+              </div>
+            </div>
+            <div class="preview-view-item">
+              <h3 class="preview-view-label">Dos</h3>
+              <div class="preview-image-container">
+                <img id="preview-img-back" src="" alt="Dos" class="preview-image">
+              </div>
+            </div>
+            <div class="preview-view-item">
+              <h3 class="preview-view-label">Côté Gauche</h3>
+              <div class="preview-image-container">
+                <img id="preview-img-left" src="" alt="Gauche" class="preview-image">
+              </div>
+            </div>
+            <div class="preview-view-item">
+              <h3 class="preview-view-label">Côté Droit</h3>
+              <div class="preview-image-container">
+                <img id="preview-img-right" src="" alt="Droite" class="preview-image">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="preview-modal-footer">
+          <button class="btn btn-secondary" id="btn-continue-editing" type="button">
+            Continuer l'édition
+          </button>
+          <button class="btn btn-primary btn-large" id="btn-confirm-submit" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            Confirmer et Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.CONFIGURATEUR_CONFIG = {
+        apiEndpoint: {{ settings.microservice_api_url | json }},
+        debugMode: {{ settings.enable_debug_mode | json }}
+      };
+    </script>
   </section>
 
 </div>
-
-{%- comment -%} ══════════════════════════════════════════════════════════════
-  CONFIGURATION DU SCHEMA (Paramètres éditables dans le Theme Editor)
-══════════════════════════════════════════════════════════════ {%- endcomment -%}
 
 {% schema %}
 {
