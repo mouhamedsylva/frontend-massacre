@@ -94,6 +94,7 @@
                  data-view-back="{{ back_image }}"
                  data-view-left="{{ left_image }}"
                  data-view-right="{{ right_image }}"
+                 data-product-price="{{ product.price | money_without_currency | replace: ',', '.' }}"
                  data-editable-zones="{{ product.metafields.custom.editable_zones | escape }}">
               
               {% if product.featured_image %}

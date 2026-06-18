@@ -1221,6 +1221,7 @@
       const productData = {
         id:    cardElement.dataset.productId,
         title: cardElement.dataset.productTitle,
+        price: cardElement.dataset.productPrice || "0.00",
         viewImages: {
           front: cardElement.dataset.viewFront,
           back:  cardElement.dataset.viewBack,
@@ -1480,6 +1481,7 @@
           customer,
           product_title: AppState.selectedProduct.title,
           product_id:    AppState.selectedProduct.id,
+          product_price: AppState.selectedProduct.price || "0.00",
           images,
         };
 
