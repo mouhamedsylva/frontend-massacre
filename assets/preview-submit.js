@@ -28,10 +28,10 @@
         btnPreview.addEventListener('click', () => this.openPreview());
       }
       
-      // Bouton "Envoyer le Design" (direct)
+      // Bouton "Envoyer le Design" - OUVRE LE FORMULAIRE CLIENT
       const btnSubmit = document.getElementById('btn-submit-design');
       if (btnSubmit) {
-        btnSubmit.addEventListener('click', () => this.submitDesign());
+        btnSubmit.addEventListener('click', () => this.openCustomerForm());
       }
       
       // Bouton "Fermer" la modal
@@ -52,12 +52,33 @@
         btnContinue.addEventListener('click', () => this.closePreview());
       }
       
-      // Bouton "Confirmer et Envoyer" (depuis la modal)
+      // Bouton "Confirmer et Envoyer" (depuis la modal) - OUVRE LE FORMULAIRE
       const btnConfirm = document.getElementById('btn-confirm-submit');
       if (btnConfirm) {
         btnConfirm.addEventListener('click', () => {
           this.closePreview();
-          this.submitDesign();
+          this.openCustomerForm();
+        });
+      }
+      
+      // Formulaire client - Bouton fermer
+      const btnCloseForm = document.getElementById('btn-close-customer-form');
+      if (btnCloseForm) {
+        btnCloseForm.addEventListener('click', () => this.closeCustomerForm());
+      }
+      
+      // Formulaire client - Overlay
+      const formOverlay = document.getElementById('customer-form-overlay');
+      if (formOverlay) {
+        formOverlay.addEventListener('click', () => this.closeCustomerForm());
+      }
+      
+      // Formulaire client - Soumission
+      const customerForm = document.getElementById('customer-info-form');
+      if (customerForm) {
+        customerForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.handleFormSubmit(e);
         });
       }
       
@@ -65,6 +86,7 @@
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           this.closePreview();
+          this.closeCustomerForm();
         }
       });
     },
@@ -179,113 +201,251 @@
     },
     
     /**
-     * Soumet le design final
+     * Ouvre le formulaire client
      */
-    async submitDesign() {
-      console.log('[PreviewSubmit] Soumission du design...');
+    async openCustomerForm() {
+      console.log('[PreviewSubmit] Ouverture du formulaire client...');
       
-      // Afficher un loader
-      const btnSubmit = document.getElementById('btn-submit-design');
-      const btnConfirm = document.getElementById('btn-confirm-submit');
-      
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span>Envoi en cours...</span>';
+      // Générer les images de toutes les vues si pas encore fait
+      if (Object.keys(this.previewImages).length === 0) {
+        await this.generateAllViewsPreview();
       }
       
-      if (btnConfirm) {
-        btnConfirm.disabled = true;
-        btnConfirm.innerHTML = '<span>Envoi en cours...</span>';
+      // Afficher la modal du formulaire
+      const modal = document.getElementById('customer-form-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Focus sur le premier champ
+        setTimeout(() => {
+          const firstInput = document.getElementById('customer-first-name');
+          if (firstInput) firstInput.focus();
+        }, 300);
+      }
+    },
+    
+    /**
+     * Ferme le formulaire client
+     */
+    closeCustomerForm() {
+      const modal = document.getElementById('customer-form-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    },
+    
+    /**
+     * Gère la soumission du formulaire client
+     */
+    async handleFormSubmit(event) {
+      event.preventDefault();
+      
+      // Récupérer les données du formulaire
+      const formData = new FormData(event.target);
+      const customerData = {
+        first_name: formData.get('first_name'),
+        last_name: formData.get('last_name'),
+        email: formData.get('email'),
+        phone: formData.get('phone') || '', // Optionnel
+        message: formData.get('message') || '' // Optionnel
+      };
+      
+      // Validation basique
+      if (!customerData.first_name || !customerData.last_name || !customerData.email) {
+        alert('⚠️ Veuillez remplir tous les champs obligatoires.');
+        return;
+      }
+      
+      // Validation email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerData.email)) {
+        alert('⚠️ Veuillez entrer une adresse email valide.');
+        return;
+      }
+      
+      // Soumettre le design avec les infos client
+      await this.submitDesign(customerData);
+    },
+    
+    /**
+     * Soumet le design final avec les informations client
+     */
+    async submitDesign(customerData) {
+      console.log('[PreviewSubmit] Soumission du design...');
+      
+      // Afficher un loader dans le bouton submit du formulaire
+      const btnFormSubmit = document.querySelector('#customer-info-form button[type="submit"]');
+      const originalButtonHTML = btnFormSubmit ? btnFormSubmit.innerHTML : '';
+      
+      if (btnFormSubmit) {
+        btnFormSubmit.disabled = true;
+        btnFormSubmit.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <div style="width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite;"></div>
+            <span>Envoi en cours...</span>
+          </div>
+        `;
       }
       
       try {
-        // Générer toutes les images si pas encore fait
-        if (Object.keys(this.previewImages).length === 0) {
-          await this.generateAllViewsPreview();
-        }
-        
         // Préparer les données de soumission
         const submissionData = {
-          productId: AppState.selectedProductId || '',
-          productTitle: AppState.selectedProductTitle || '',
-          views: {
+          customer: customerData,
+          product_title: AppState.selectedProductTitle || 'Produit Personnalisé',
+          images: {
             front: this.previewImages.front || '',
             back: this.previewImages.back || '',
             left: this.previewImages.left || '',
             right: this.previewImages.right || ''
-          },
-          metadata: {
-            timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent
           }
         };
         
-        // Envoyer vers le microservice ou Shopify
-        await this.sendToBackend(submissionData);
+        // Envoyer vers le microservice
+        const result = await this.sendToBackend(submissionData);
+        
+        // Fermer le formulaire
+        this.closeCustomerForm();
         
         // Succès !
-        alert('✅ Votre design a été envoyé avec succès !');
+        this.showSuccessMessage(customerData);
         
       } catch (error) {
         console.error('[PreviewSubmit] Erreur lors de la soumission:', error);
-        alert('❌ Erreur lors de l\'envoi. Veuillez réessayer.');
+        alert('❌ Erreur lors de l\'envoi. Veuillez réessayer ou nous contacter.');
       } finally {
-        // Réactiver les boutons
-        if (btnSubmit) {
-          btnSubmit.disabled = false;
-          btnSubmit.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            Envoyer le Design
-          `;
-        }
-        
-        if (btnConfirm) {
-          btnConfirm.disabled = false;
-          btnConfirm.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            Confirmer et Envoyer
-          `;
+        // Réactiver le bouton
+        if (btnFormSubmit) {
+          btnFormSubmit.disabled = false;
+          btnFormSubmit.innerHTML = originalButtonHTML;
         }
       }
     },
     
     /**
-     * Envoie les données au backend (microservice ou Shopify)
+     * Affiche un message de succès élégant
+     */
+    showSuccessMessage(customerData) {
+      // Créer une modal de succès temporaire
+      const successHTML = `
+        <div id="success-overlay" style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 100000;
+          animation: fadeIn 0.3s ease;
+        ">
+          <div style="
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s ease;
+          ">
+            <div style="
+              width: 80px;
+              height: 80px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 1.5rem;
+              font-size: 3rem;
+            ">✓</div>
+            <h2 style="
+              font-size: 1.8rem;
+              font-weight: 700;
+              color: #1a202c;
+              margin-bottom: 1rem;
+            ">Design Envoyé avec Succès !</h2>
+            <p style="
+              color: #4a5568;
+              font-size: 1.1rem;
+              margin-bottom: 1.5rem;
+              line-height: 1.6;
+            ">
+              Merci <strong>${customerData.first_name}</strong> !<br>
+              Votre demande de personnalisation a bien été reçue.<br>
+              Nous vous contacterons à <strong>${customerData.email}</strong><br>
+              sous 24-48h pour finaliser votre commande.
+            </p>
+            <button onclick="document.getElementById('success-overlay').remove()" style="
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              border: none;
+              padding: 0.875rem 2.5rem;
+              font-size: 1rem;
+              font-weight: 600;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: transform 0.2s;
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+              Parfait !
+            </button>
+          </div>
+        </div>
+        <style>
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', successHTML);
+      
+      // Auto-fermer après 8 secondes
+      setTimeout(() => {
+        const overlay = document.getElementById('success-overlay');
+        if (overlay) overlay.remove();
+      }, 8000);
+    },
+    
+    /**
+     * Envoie les données au backend (microservice)
      */
     async sendToBackend(data) {
-      // Option 1 : Envoyer vers votre microservice
       const apiEndpoint = window.CONFIGURATEUR_CONFIG?.apiEndpoint;
       
-      if (apiEndpoint) {
-        const response = await fetch(`${apiEndpoint}/submit`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        console.log('[PreviewSubmit] Réponse du serveur:', result);
-        return result;
+      if (!apiEndpoint) {
+        throw new Error('Endpoint API non configuré');
       }
       
-      // Option 2 : Sauvegarder localement (fallback)
-      console.warn('[PreviewSubmit] Aucun endpoint configuré, sauvegarde locale');
-      localStorage.setItem('massacre_design_' + Date.now(), JSON.stringify(data));
+      console.log('[PreviewSubmit] Envoi vers:', apiEndpoint);
       
-      // Simuler un délai réseau
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('[PreviewSubmit] ✅ Réponse du serveur:', result);
+      return result;
     },
     
     /**

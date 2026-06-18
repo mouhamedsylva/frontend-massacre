@@ -2164,6 +2164,254 @@
 
 
 /* ══════════════════════════════════════════════════════════════════════════════
+   MODAL FORMULAIRE CLIENT - Style élégant et professionnel
+══════════════════════════════════════════════════════════════════════════════ */
+
+.customer-form-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.customer-form-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.customer-form-content {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.customer-form-header {
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem 2.5rem;
+  text-align: center;
+}
+
+.customer-form-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.customer-form-subtitle {
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.customer-form-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.customer-form-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.customer-form-close svg {
+  stroke: white;
+}
+
+/* Formulaire */
+.customer-info-form {
+  padding: 2.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-field {
+  margin-bottom: 1.25rem;
+}
+
+.form-field-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.form-field-label .required {
+  color: #e53e3e;
+  font-weight: 700;
+}
+
+.form-field-label .optional {
+  color: #718096;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.form-field-input,
+.form-field-textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: #ffffff;
+}
+
+.form-field-input:focus,
+.form-field-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-field-input::placeholder,
+.form-field-textarea::placeholder {
+  color: #a0aec0;
+}
+
+.form-field-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-field-hint {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Boutons d'action */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.form-actions .btn-secondary {
+  flex: 0 0 auto;
+  padding: 0.875rem 1.5rem;
+}
+
+.form-actions .btn-primary {
+  flex: 1;
+}
+
+.form-footer-note {
+  font-size: 0.8rem;
+  color: #718096;
+  text-align: center;
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+  padding-top: 1rem;
+  border-top: 1px solid #f7fafc;
+}
+
+/* Animation du spinner de chargement */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .customer-form-content {
+    width: 95%;
+    max-width: 95%;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+
+  .customer-form-header {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .customer-form-title {
+    font-size: 1.4rem;
+  }
+
+  .customer-form-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .customer-info-form {
+    padding: 1.5rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .form-field {
+    margin-bottom: 1rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn-secondary,
+  .form-actions .btn-primary {
+    width: 100%;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
    ANCIENS STYLES (À SUPPRIMER PROGRESSIVEMENT)
 ══════════════════════════════════════════════════════════════════════════════ */
 
