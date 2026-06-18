@@ -10,6 +10,14 @@
   - product.metafields.custom.editable_zones : JSON avec les coordonnées des zones éditables
 {% endcomment %}
 
+<script>
+  // Configuration de l'URL du backend Railway
+  window.CONFIGURATEUR_CONFIG = {
+    apiEndpoint: 'https://backend-massacre-production.up.railway.app/submit-devis',
+    debugMode: false
+  };
+</script>
+
 {{ 'configurateur.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'fabric.min.js' | asset_url }}" defer></script>
 <script src="{{ 'configurateur.js' | asset_url }}" defer></script>
