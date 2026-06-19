@@ -262,6 +262,32 @@
       // pour qu'elle soit nettement détachée du cadre de sélection (cf. capture d'écran).
       const OFFSET = 60;
 
+      // IMPORTANT : offsetX/offsetY ne déplacent QUE le rendu visuel de l'icône
+      // (utilisé par render() via ctx.translate). Ils n'affectent PAS la zone de
+      // détection de clic (hit-test), qui reste calculée par défaut sur le coin
+      // réel de l'objet. Sans positionHandler custom, la zone cliquable de chaque
+      // contrôle reste donc superposée au coin de l'objet, en plein milieu de la
+      // zone qu'on essaie de "drag" → Fabric intercepte le mousedown comme une
+      // action de contrôle (delete/rotate/clone/scale) au lieu de déplacer l'objet.
+      // On fournit donc un positionHandler qui reproduit le même décalage que le
+      // rendu, dans l'espace écran, pour que la zone cliquable suive l'icône.
+      const makeOffsetPositionHandler = (offsetX, offsetY) => {
+        return function (dim, finalMatrix, fabricObject, currentControl) {
+          const basePoint = fabric.Control.prototype.positionHandler.call(
+            this, dim, finalMatrix, fabricObject, currentControl
+          );
+          const angleRad = fabric.util.degreesToRadians(fabricObject.angle || 0);
+          const cos = Math.cos(angleRad);
+          const sin = Math.sin(angleRad);
+          const zoom = fabricObject.canvas ? fabricObject.canvas.getZoom() : 1;
+          // Applique le décalage dans le repère local de l'objet (tourne avec lui),
+          // exactement comme le ferait ctx.translate après ctx.rotate dans render().
+          const dx = (offsetX * cos - offsetY * sin) * zoom;
+          const dy = (offsetX * sin + offsetY * cos) * zoom;
+          return new fabric.Point(basePoint.x + dx, basePoint.y + dy);
+        };
+      };
+
       fabric.Object.prototype.controls.tl = new Control({
         x: -0.5,
         y: -0.5,
@@ -270,6 +296,7 @@
         cursorStyle: 'pointer',
         mouseUpHandler: this.deleteObjectHandler,
         render: this.renderIcon('delete'),
+        positionHandler: makeOffsetPositionHandler(-OFFSET, -OFFSET),
         sizeX: 32,
         sizeY: 32,
       });
@@ -283,6 +310,7 @@
         actionHandler: fabric.controlsUtils.rotationWithSnapping,
         actionName: 'rotate',
         render: this.renderIcon('rotate'),
+        positionHandler: makeOffsetPositionHandler(OFFSET, -OFFSET),
         sizeX: 32,
         sizeY: 32,
       });
@@ -295,6 +323,7 @@
         cursorStyle: 'pointer',
         mouseUpHandler: this.cloneObjectHandler,
         render: this.renderIcon('clone'),
+        positionHandler: makeOffsetPositionHandler(-OFFSET, OFFSET),
         sizeX: 32,
         sizeY: 32,
       });
@@ -308,6 +337,7 @@
         actionHandler: fabric.controlsUtils.scalingEqually,
         actionName: 'scale',
         render: this.renderIcon('resize'),
+        positionHandler: makeOffsetPositionHandler(OFFSET, OFFSET),
         sizeX: 32,
         sizeY: 32,
       });
