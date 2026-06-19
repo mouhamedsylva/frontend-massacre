@@ -763,14 +763,15 @@
     },
 
     // Crée un rect de clip pour la zone éditable de la vue courante
-    _makeClipRect(view) {
+   _makeClipRect(view) {
       const zone = this._getActiveZone(view || AppState.currentView);
       if (!zone) return null;
+      const resolvedZone = this.resolveZone(zone, view);
       return new fabric.Rect({
-        left:               zone.x,
-        top:                zone.y,
-        width:              zone.w,
-        height:             zone.h,
+        left: resolvedZone.x,
+        top: resolvedZone.y,
+        width: resolvedZone.w,
+        height: resolvedZone.h,
         absolutePositioned: true, // coordonnées absolues dans le canvas
       });
     },
@@ -813,11 +814,13 @@
       zones.forEach(zone => {
         const isActive = zone.id === AppState.activeZone;
 
+        const resolvedZone = this.resolveZone(zone, view);
+
         const rect = new fabric.Rect({
-          left: zone.x,
-          top: zone.y,
-          width: zone.w,
-          height: zone.h,
+          left: resolvedZone.x,
+          top: resolvedZone.y,
+          width: resolvedZone.w,
+          height: resolvedZone.h,
           fill: 'rgba(74, 144, 226, 0.04)',
           stroke: isActive ? '#4A90E2' : '#888888',
           strokeWidth: isActive ? 2 : 1.5,
@@ -830,8 +833,8 @@
         });
 
         const label = new fabric.Text(zone.label || 'Zone', {
-          left: zone.x + 8,
-          top: zone.y + 6,
+          left: resolvedZone.x + 8,
+          top: resolvedZone.y + 6,
           fontSize: 13,
           fontFamily: 'Arial, sans-serif',
           fontWeight: '600',
@@ -876,10 +879,13 @@
     _makeClipRect(view) {
       const zone = this._getActiveZone(view || AppState.currentView);
       if (!zone) return null;
+      const resolvedZone = this.resolveZone(zone, view);
       return new fabric.Rect({
-        left: zone.x, top: zone.y,
-        width: zone.w, height: zone.h,
-        absolutePositioned: true,
+        left: resolvedZone.x,
+        top: resolvedZone.y,
+        width: resolvedZone.w,
+        height: resolvedZone.h,
+        absolutePositioned: true, // coordonnées absolues dans le canvas
       });
     },
 
@@ -1669,6 +1675,39 @@
 
       Utils.log(`Changement d'onglet : ${tabId}`);
     }
+  };
+
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // Calcule le rectangle réel de l'image dans le canvas (letterboxing inclus)
+  // ══════════════════════════════════════════════════════════════════════════════
+  CanvasManager.prototype.getImageBBoxInCanvas = function(view) {
+    const canvas = AppState.fabricCanvas;
+    const bg = canvas.backgroundImage;
+    if (!bg) {
+      // Pas d'image : on suppose qu'elle occupe tout le canvas
+      return { left: 0, top: 0, width: CONFIG.CANVAS_WIDTH, height: CONFIG.CANVAS_HEIGHT };
+    }
+    const dispW = bg.width * bg.scaleX;
+    const dispH = bg.height * bg.scaleY;
+    return {
+      left: (CONFIG.CANVAS_WIDTH - dispW) / 2,
+      top: (CONFIG.CANVAS_HEIGHT - dispH) / 2,
+      width: dispW,
+      height: dispH
+    };
+  };
+
+  // Convertit une zone en % vers des coordonnées canvas absolues
+  CanvasManager.prototype.resolveZone = function(zone, view) {
+    const bbox = this.getImageBBoxInCanvas(view);
+    return {
+      ...zone,
+      x: bbox.left + zone.xPct * bbox.width,
+      y: bbox.top  + zone.yPct * bbox.height,
+      w: zone.wPct * bbox.width,
+      h: zone.hPct * bbox.height
+    };
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
