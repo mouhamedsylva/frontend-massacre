@@ -1681,7 +1681,7 @@
   // ══════════════════════════════════════════════════════════════════════════════
   // Calcule le rectangle réel de l'image dans le canvas (letterboxing inclus)
   // ══════════════════════════════════════════════════════════════════════════════
-  CanvasManager.prototype.getImageBBoxInCanvas = function(view) {
+  CanvasManager.getImageBBoxInCanvas = function(view) {
     const canvas = AppState.fabricCanvas;
     const bg = canvas.backgroundImage;
     if (!bg) {
@@ -1699,8 +1699,8 @@
   };
 
   // Convertit une zone en % vers des coordonnées canvas absolues
-  CanvasManager.prototype.resolveZone = function(zone, view) {
-    const bbox = this.getImageBBoxInCanvas(view);
+  CanvasManager.resolveZone = function(zone, view) {
+    const bbox = CanvasManager.getImageBBoxInCanvas(view);
     return {
       ...zone,
       x: bbox.left + zone.xPct * bbox.width,
