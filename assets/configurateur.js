@@ -95,6 +95,9 @@
 
     // Flag de soumission en cours
     isSubmitting: false,
+    
+    // 🔥 Flag pour éviter les sauvegardes pendant le chargement de vue
+    _isLoadingView: false,
   };
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -611,6 +614,9 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     loadView(view) {
+      // 🔥 Activer le flag de chargement pour bloquer les sauvegardes automatiques
+      AppState._isLoadingView = true;
+      
       Utils.toggleCanvasLoader(true);
       AppState._zoneGuidesVisible = false;
       Utils.log(`[CanvasManager] Début loadView pour "${view}"`);
@@ -619,6 +625,7 @@
       if (!canvas) {
         console.error('[CanvasManager] Erreur : Canvas non initialisé');
         Utils.toggleCanvasLoader(false);
+        AppState._isLoadingView = false; // 🔥 Réactiver les sauvegardes
         return;
       }
 
@@ -699,6 +706,7 @@
                   this.restoreViewObjects(view, () => {
                     canvas.renderAll();
                     Utils.toggleCanvasLoader(false);
+                    AppState._isLoadingView = false; // 🔥 Réactiver les sauvegardes
                     Utils.log(`[CanvasManager] Vue "${view}" chargée avec succès`);
                     window.dispatchEvent(new CustomEvent('configurator:view-loaded', { detail: { view } }));
                   });
@@ -715,6 +723,7 @@
       } catch (err) {
         console.error(`[CanvasManager] Erreur critique dans loadView :`, err);
         Utils.toggleCanvasLoader(false);
+        AppState._isLoadingView = false; // 🔥 Réactiver les sauvegardes même en cas d'erreur
       }
     },
 
@@ -728,6 +737,7 @@
       this.restoreViewObjects(view, () => {
         canvas.renderAll();
         Utils.toggleCanvasLoader(false);
+        AppState._isLoadingView = false; // 🔥 Réactiver les sauvegardes
         Utils.log(`[CanvasManager] Vue "${view}" chargée (sans fond)`);
         window.dispatchEvent(new CustomEvent('configurator:view-loaded', { detail: { view } }));
       });
@@ -879,20 +889,36 @@
     // ─────────────────────────────────────────────────────────────────────────
 
     saveCurrentView() {
+      // 🔥 Ne pas sauvegarder si on est en train de charger une vue
+      if (AppState._isLoadingView) {
+        console.log(`⏸️ [SAVE] Sauvegarde bloquée : chargement de vue en cours`);
+        return;
+      }
+      
       const view   = AppState.currentView;
       const canvas = AppState.fabricCanvas;
+      
+      if (!canvas) {
+        console.error(`❌ [SAVE] Canvas non disponible !`);
+        return;
+      }
 
       // Garder uniquement les objets "utilisateur" (selectable et pas l'indicateur)
       const objects = canvas.getObjects().filter(obj =>
         obj.selectable !== false && !obj.isZoneIndicator
       );
+      
+      console.log(`💾 [SAVE] Sauvegarde de "${view}" : ${objects.length} objets sur le canvas`);
+      objects.forEach((obj, index) => {
+        console.log(`   Objet ${index + 1}:`, obj.type, obj.text || obj.src?.substring(0, 30) || '');
+      });
 
       // Sérialiser en JSON Fabric.js (inclut toutes les propriétés)
       AppState.viewsData[view].objects = objects.map(obj => obj.toJSON([
         'selectable', 'evented', 'isZoneIndicator', 'clipPath',
       ]));
 
-      console.log(`✅ [SAVE] Vue "${view}" sauvegardée — ${objects.length} objet(s)`, AppState.viewsData[view]);
+      console.log(`✅ [SAVE] Vue "${view}" sauvegardée — ${AppState.viewsData[view].objects.length} objet(s) en mémoire`);
       Utils.log(`Vue "${view}" sauvegardée — ${objects.length} objet(s)`);
     },
 
@@ -904,7 +930,9 @@
     restoreViewObjects(view, callback) {
       const viewData = AppState.viewsData[view];
 
-      console.log(`📥 [RESTORE] Tentative de restauration vue "${view}"`, viewData);
+      console.log(`📥 [RESTORE] Tentative de restauration vue "${view}"`);
+      console.log(`📥 [RESTORE] Données disponibles:`, viewData);
+      console.log(`📥 [RESTORE] Nombre d'objets à restaurer:`, viewData?.objects?.length || 0);
 
       if (!viewData || !viewData.objects || viewData.objects.length === 0) {
         console.log(`📥 [RESTORE] Vue "${view}" vide, rien à restaurer`);
@@ -912,15 +940,29 @@
         return;
       }
 
+      const canvas = AppState.fabricCanvas;
+      if (!canvas) {
+        console.error(`❌ [RESTORE] Canvas non disponible !`);
+        if (callback) callback();
+        return;
+      }
+
       try {
-        fabric.util.enlivenObjects(viewData.objects, (objects) => {
-          console.log(`📥 [RESTORE] ${objects.length} objets enliven pour vue "${view}"`, objects);
-          objects.forEach(obj => {
+        console.log(`📥 [RESTORE] Appel à fabric.util.enlivenObjects avec ${viewData.objects.length} objets...`);
+        
+        fabric.util.enlivenObjects(viewData.objects, (enlivenedObjects) => {
+          console.log(`📥 [RESTORE] ${enlivenedObjects.length} objets "enlivened" pour vue "${view}"`);
+          
+          enlivenedObjects.forEach((obj, index) => {
+            console.log(`📥 [RESTORE] Ajout objet ${index + 1}:`, obj.type, obj.text || '');
             this.applyClipPathToObject(obj, view);
-            AppState.fabricCanvas.add(obj);
+            canvas.add(obj);
           });
-          Utils.log(`[CanvasManager] ${objects.length} objet(s) restauré(s) sur vue "${view}"`);
-          console.log(`✅ [RESTORE] Vue "${view}" restaurée avec succès`);
+          
+          canvas.renderAll();
+          console.log(`✅ [RESTORE] Vue "${view}" restaurée avec succès - ${enlivenedObjects.length} objets ajoutés`);
+          Utils.log(`[CanvasManager] ${enlivenedObjects.length} objet(s) restauré(s) sur vue "${view}"`);
+          
           if (callback) callback();
         }, 'fabric');
       } catch (err) {
@@ -962,21 +1004,29 @@
         return;
       }
 
-      console.log(`🔄 [SWITCH] Changement de vue : "${AppState.currentView}" → "${view}"`);
-
-      // Sauvegarder la vue actuelle avant de changer
-      this.saveCurrentView();
-
-      // Mettre à jour l'état
       const previousView = AppState.currentView;
+      console.log(`🔄 [SWITCH] Changement de vue : "${previousView}" → "${view}"`);
+
+      // 1. Sauvegarder la vue actuelle avant de changer
+      console.log(`🔄 [SWITCH] Étape 1 : Sauvegarde de la vue "${previousView}"`);
+      this.saveCurrentView();
+      
+      // Vérifier que la sauvegarde a bien fonctionné
+      const savedObjects = AppState.viewsData[previousView]?.objects || [];
+      console.log(`🔄 [SWITCH] Étape 1 DONE : ${savedObjects.length} objets sauvegardés pour "${previousView}"`);
+
+      // 2. Mettre à jour l'état
+      console.log(`🔄 [SWITCH] Étape 2 : Mise à jour de l'état global`);
       AppState.currentView = view;
 
-      // Mettre à jour l'UI des onglets
+      // 3. Mettre à jour l'UI des onglets
+      console.log(`🔄 [SWITCH] Étape 3 : Mise à jour UI des onglets`);
       document.querySelectorAll('.view-thumbnail-btn').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.view === view);
       });
 
-      // Charger la nouvelle vue (avec son clipPath propre)
+      // 4. Charger la nouvelle vue (avec son clipPath propre)
+      console.log(`🔄 [SWITCH] Étape 4 : Chargement de la vue "${view}"`);
       this.loadView(view);
 
       console.log(`✅ [SWITCH] Basculement de "${previousView}" vers "${view}" terminé`);
