@@ -9,6 +9,7 @@
   const PreviewSubmitManager = {
     
     previewImages: {}, // Images de preview pour chaque vue
+    isSubmitting: false, // Flag pour éviter les doubles soumissions
     
     /**
      * Initialise le gestionnaire
@@ -242,6 +243,12 @@
     async handleFormSubmit(event) {
       event.preventDefault();
       
+      // ⭐ Protection contre les doubles soumissions
+      if (this.isSubmitting) {
+        console.log('[PreviewSubmit] ⚠️ Soumission déjà en cours, ignoré');
+        return;
+      }
+      
       // Récupérer les données du formulaire
       const formData = new FormData(event.target);
       const customerData = {
@@ -274,6 +281,9 @@
      */
     async submitDesign(customerData) {
       console.log('[PreviewSubmit] Soumission du design...');
+      
+      // ⭐ Activer le flag de soumission
+      this.isSubmitting = true;
       
       // Afficher un loader dans le bouton submit du formulaire
       const btnFormSubmit = document.querySelector('#customer-info-form button[type="submit"]');
@@ -314,12 +324,15 @@
       } catch (error) {
         console.error('[PreviewSubmit] Erreur lors de la soumission:', error);
         alert('❌ Erreur lors de l\'envoi. Veuillez réessayer ou nous contacter.');
-      } finally {
-        // Réactiver le bouton
+        
+        // Réactiver le bouton en cas d'erreur
         if (btnFormSubmit) {
           btnFormSubmit.disabled = false;
           btnFormSubmit.innerHTML = originalButtonHTML;
         }
+      } finally {
+        // ⭐ Toujours réinitialiser le flag
+        this.isSubmitting = false;
       }
     },
     
