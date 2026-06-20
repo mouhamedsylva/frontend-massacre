@@ -873,7 +873,13 @@
     },
 
     getActiveZone(view) {
-      return this._getActiveZone(view || AppState.currentView);
+      const v = view || AppState.currentView;
+      const zone = this._getActiveZone(v);
+      if (!zone) return null;
+      // ⚠️ Toujours renvoyer la zone résolue (coordonnées absolues canvas),
+      // pour que tout positionnement d'objet corresponde exactement
+      // au rectangle pointillé affiché à l'utilisateur.
+      return this.resolveZone(zone, v);
     },
 
     _makeClipRect(view) {
@@ -1699,7 +1705,16 @@
   };
 
   // Convertit une zone en % vers des coordonnées canvas absolues
+  // Si la zone fournit déjà x/y/w/h absolus (et pas de *Pct), on la renvoie telle quelle.
   CanvasManager.resolveZone = function(zone, view) {
+    const hasPct = zone.xPct !== undefined && zone.yPct !== undefined &&
+                   zone.wPct !== undefined && zone.hPct !== undefined;
+
+    if (!hasPct) {
+      // Zone déjà en coordonnées absolues (ex. zones par défaut codées en dur)
+      return { ...zone };
+    }
+
     const bbox = CanvasManager.getImageBBoxInCanvas(view);
     return {
       ...zone,
