@@ -274,6 +274,25 @@
 
       const Control = fabric.Control;
 
+      // Sécurité : si fabric.controlsUtils n'est pas disponible dans la version
+      // chargée, on retombe sur les actionHandlers natifs de Fabric.Object pour
+      // éviter qu'une référence undefined ne fasse planter install() avant la fin
+      // (ce qui empêcherait bl/br d'être créés et le style final d'être appliqué).
+      const rotationHandler = (fabric.controlsUtils && fabric.controlsUtils.rotationWithSnapping)
+        || fabric.controlsActions?.rotationWithSnapping
+        || function (eventData, transform, x, y) {
+          return fabric.controlsUtils
+            ? fabric.controlsUtils.rotationWithSnapping(eventData, transform, x, y)
+            : false;
+        };
+      const scalingHandler = (fabric.controlsUtils && fabric.controlsUtils.scalingEqually)
+        || fabric.controlsActions?.scalingEqually
+        || function (eventData, transform, x, y) {
+          return fabric.controlsUtils
+            ? fabric.controlsUtils.scalingEqually(eventData, transform, x, y)
+            : false;
+        };
+
       // Décalage en pixels appliqué à chaque icône, vers l'extérieur du coin,
       // pour qu'elle soit nettement détachée du cadre de sélection.
       // Valeur réduite de 60 à 40 pour rapprocher les icônes du cadre
@@ -316,6 +335,9 @@
         positionHandler: makeOffsetPositionHandler(-OFFSET, -OFFSET),
         sizeX: 32,
         sizeY: 32,
+        cornerSize: 32,
+        touchSizeX: 40,
+        touchSizeY: 40,
       });
 
       fabric.Object.prototype.controls.tr = new Control({
@@ -324,12 +346,15 @@
         offsetX: OFFSET,
         offsetY: -OFFSET,
         cursorStyle: 'pointer',
-        actionHandler: fabric.controlsUtils.rotationWithSnapping,
+        actionHandler: rotationHandler,
         actionName: 'rotate',
         render: this.renderIcon('rotate'),
         positionHandler: makeOffsetPositionHandler(OFFSET, -OFFSET),
         sizeX: 32,
         sizeY: 32,
+        cornerSize: 32,
+        touchSizeX: 40,
+        touchSizeY: 40,
       });
 
       fabric.Object.prototype.controls.bl = new Control({
@@ -343,6 +368,9 @@
         positionHandler: makeOffsetPositionHandler(-OFFSET, OFFSET),
         sizeX: 32,
         sizeY: 32,
+        cornerSize: 32,
+        touchSizeX: 40,
+        touchSizeY: 40,
       });
 
       fabric.Object.prototype.controls.br = new Control({
@@ -351,13 +379,23 @@
         offsetX: OFFSET,
         offsetY: OFFSET,
         cursorStyle: 'nwse-resize',
-        actionHandler: fabric.controlsUtils.scalingEqually,
+        actionHandler: scalingHandler,
         actionName: 'scale',
         render: this.renderIcon('resize'),
         positionHandler: makeOffsetPositionHandler(OFFSET, OFFSET),
         sizeX: 32,
         sizeY: 32,
+        cornerSize: 32,
+        touchSizeX: 40,
+        touchSizeY: 40,
       });
+
+      // Sécurité supplémentaire : certaines versions de fabric.js basent encore
+      // la détection de clic sur la propriété d'instance `cornerSize` (et non
+      // sizeX/sizeY définis sur le Control). On l'aligne explicitement pour que
+      // la zone cliquable corresponde toujours à la taille visuelle des icônes.
+      fabric.Object.prototype.cornerSize = 32;
+      fabric.Object.prototype.touchCornerSize = 40;
 
       // On masque les contrôles milieux (mt, mb, ml, mr) et mtr (poignée de rotation par défaut)
       // pour ne garder que les 4 coins, comme dans l'exemple visuel.
@@ -425,6 +463,7 @@
       this.setupViewTabs();
 
       this.setupZoomControls();
+      this.setupScrollOffsetFix();
 
       // Charger la vue initiale (Front)
       this.loadView('front');
@@ -434,14 +473,23 @@
 
     // ─────────────────────────────────────────────────────────────────────────
     // REDIMENSIONNEMENT : remplit la hauteur disponible du workspace
-    // Le ratio 4:3 (800×600) est préservé. On scale via CSS transform
-    // pour ne pas détruire les coordonnées internes de Fabric.js.
+    // Le ratio 4:3 (800×600) est préservé.
+    //
+    // ⚠️ CORRECTIF : on utilise désormais le zoom NATIF de Fabric.js
+    // (canvas.setZoom + canvas.setDimensions) au lieu d'un transform:scale()
+    // CSS. Le scale CSS déforme uniquement le RENDU visuel mais Fabric.js
+    // continue de croire qu'il occupe sa taille interne d'origine (800×600) —
+    // tout son mapping clic → coordonnées (y compris le hit-test des contrôles
+    // aux 4 coins) reste donc calculé sur la mauvaise échelle, d'où le
+    // décalage systématique entre l'icône affichée et sa zone cliquable
+    // réelle. Le zoom natif fait gérer ce mapping par Fabric lui-même, de
+    // façon cohérente entre rendu, clic et hit-test des contrôles.
     // ─────────────────────────────────────────────────────────────────────────
 
     resizeCanvasToWorkspace() {
       const workspace = document.querySelector('.canvas-workspace');
       const wrapper   = document.querySelector('.canvas-workspace .canvas-wrapper');
-      if (!workspace || !wrapper) return;
+      if (!workspace || !wrapper || !AppState.fabricCanvas) return;
 
       const padding = 48;
       const availH  = workspace.clientHeight - padding;
@@ -459,32 +507,36 @@
       const baseScale = dispW / CONFIG.CANVAS_WIDTH;
       AppState.baseScale = baseScale; // ← on garde le scale "fit" en mémoire
 
-      this.applyZoom(); // ← applique baseScale * userZoom
-
-      wrapper.style.width  = `${dispW * AppState.userZoom}px`;
-      wrapper.style.height = `${dispH * AppState.userZoom}px`;
+      this.applyZoom(); // ← applique baseScale * userZoom via le zoom natif Fabric
 
       Utils.log(`Canvas redimensionné : base=${baseScale.toFixed(3)} userZoom=${AppState.userZoom}`);
     },
 
-    // Applique le scale final (base × zoom utilisateur) sur le wrapper Fabric
+    // Applique le scale final (base × zoom utilisateur) via le zoom natif Fabric.js
     applyZoom() {
-      const wrapper = document.querySelector('.canvas-workspace .canvas-wrapper');
-      if (!wrapper) return;
-      const fabricWrap = wrapper.querySelector('.canvas-container') || wrapper;
+      const canvas = AppState.fabricCanvas;
+      if (!canvas) return;
+
       const finalScale = AppState.baseScale * AppState.userZoom;
-      fabricWrap.style.transform       = `scale(${finalScale})`;
-      fabricWrap.style.transformOrigin = 'center center';
+
+      // setZoom() ajuste le viewportTransform : tout le rendu ET le hit-test
+      // (objets + contrôles) restent calculés dans le même référentiel cohérent.
+      canvas.setZoom(finalScale);
+
+      // setDimensions ajuste la taille RÉELLE des éléments <canvas> (et donc
+      // leur getBoundingClientRect), pour que la position du clic à l'écran
+      // corresponde exactement à la taille affichée — plus de mapping CSS
+      // séparé à gérer.
+      canvas.setDimensions({
+        width:  CONFIG.CANVAS_WIDTH  * finalScale,
+        height: CONFIG.CANVAS_HEIGHT * finalScale,
+      });
+
+      canvas.calcOffset();
+      canvas.requestRenderAll();
 
       const label = document.getElementById('zoom-level-label');
       if (label) label.textContent = `${Math.round(AppState.userZoom * 100)}%`;
-
-      // Force Fabric à recalculer son offset interne après le changement de scale CSS
-      if (AppState.fabricCanvas) {
-        requestAnimationFrame(() => {
-          AppState.fabricCanvas.calcOffset();
-        });
-      }
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -540,24 +592,74 @@
         if (e.target && !e.target.isZoneIndicator) {
           this.showZoneGuides();
           this.constrainObjectToZone(e.target);
+
+          // Pendant le redimensionnement : masquer les 4 icônes et n'afficher
+          // que le cadre, en pointillé, pour ne pas surcharger visuellement
+          // l'action en cours.
+          if (e.target.hasControls !== false) {
+            e.target.set({
+              hasControls: false,
+              borderDashArray: [6, 6],
+            });
+            e.target.canvas.requestRenderAll();
+          }
         }
       });
 
       canvas.on('object:rotating', (e) => {
         if (e.target && !e.target.isZoneIndicator) {
           this.showZoneGuides();
+
+          // Même comportement pendant la rotation, pour rester cohérent
+          if (e.target.hasControls !== false) {
+            e.target.set({
+              hasControls: false,
+              borderDashArray: [6, 6],
+            });
+            e.target.canvas.requestRenderAll();
+          }
         }
       });
 
+      // Restaure les icônes + le cadre plein dès le relâchement de la souris,
+      // que l'action ait été un redimensionnement, une rotation ou un simple
+      // déplacement.
       canvas.on('mouse:up', () => {
         this.hideZoneGuides();
+        this.restoreObjectControls();
       });
 
       canvas.on('object:modified', (e) => {
         if (e.target && !e.target.isZoneIndicator) {
           this.hideZoneGuides();
         }
+        this.restoreObjectControls(e.target);
       });
+    },
+
+    // Réaffiche les 4 icônes de contrôle et repasse le cadre de sélection en
+    // trait plein (appelé au relâchement de la souris, après un redimensionnement
+    // ou une rotation qui les avaient temporairement masquées).
+    restoreObjectControls(target) {
+      const canvas = AppState.fabricCanvas;
+      if (!canvas) return;
+
+      const objects = target ? [target] : canvas.getActiveObjects();
+      let needsRender = false;
+
+      objects.forEach((obj) => {
+        if (obj && !obj.isZoneIndicator && (obj.hasControls === false || obj.borderDashArray)) {
+          obj.set({
+            hasControls: true,
+            borderDashArray: null,
+          });
+          needsRender = true;
+        }
+      });
+
+      if (needsRender) {
+        canvas.requestRenderAll();
+      }
     },
 
 
@@ -583,6 +685,44 @@
         const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
         setZoom(AppState.userZoom + delta);
       }, { passive: false });
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CORRECTION DU CACHE DE POSITION FABRIC AU SCROLL
+    // Le canvas est affiché via transform:scale() CSS (voir applyZoom()).
+    // Fabric.js calcule la position des clics à partir de son offset interne
+    // (canvas._offset), recalculé uniquement au zoom ou au resize. Si la PAGE
+    // défile (scroll), cet offset devient obsolète : les clics absolus (sur
+    // les icônes de contrôle aux coins, ou pour sélectionner un objet) tombent
+    // alors à côté de leur cible réelle, ce qui peut désélectionner l'objet
+    // au lieu de déclencher l'action attendue. Le drag/déplacement n'est lui
+    // pas affecté car Fabric raisonne en delta relatif, pas en position absolue.
+    // On force donc un recalcul à chaque scroll (page + tout ancêtre scrollable).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    setupScrollOffsetFix() {
+      const recalcOffset = () => {
+        if (AppState.fabricCanvas) {
+          AppState.fabricCanvas.calcOffset();
+        }
+      };
+
+      // Scroll de la fenêtre globale
+      window.addEventListener('scroll', recalcOffset, { passive: true });
+
+      // Scroll de tout conteneur parent scrollable (ex: panneau latéral, workspace)
+      let el = document.querySelector('.canvas-workspace');
+      while (el && el !== document.body) {
+        el.addEventListener('scroll', recalcOffset, { passive: true });
+        el = el.parentElement;
+      }
+
+      // Sécurité supplémentaire : recalcul juste avant chaque interaction souris
+      // sur le canvas, au cas où un scroll aurait eu lieu sans déclencher l'event
+      // (ex: scroll programmatique, changement d'accordéon ouvrant/fermant une section)
+      const upperCanvasEl = AppState.fabricCanvas?.upperCanvasEl;
+      upperCanvasEl?.addEventListener('mousedown', recalcOffset, { capture: true });
+      upperCanvasEl?.addEventListener('touchstart', recalcOffset, { capture: true, passive: true });
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1056,6 +1196,12 @@
     },
 
     getDisplayScale() {
+      // Le canvas est désormais dimensionné via le zoom natif Fabric
+      // (setZoom + setDimensions) : son échelle d'affichage réelle est
+      // directement canvas.getZoom(), plus fiable que de mesurer le wrapper.
+      const canvas = AppState.fabricCanvas;
+      if (canvas) return canvas.getZoom();
+
       const wrapper = document.querySelector('.canvas-workspace .canvas-wrapper');
       if (!wrapper || !wrapper.clientWidth) return 1;
       return wrapper.clientWidth / CONFIG.CANVAS_WIDTH;
