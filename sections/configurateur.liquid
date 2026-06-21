@@ -22,6 +22,7 @@
 <script src="{{ 'fabric.min.js' | asset_url }}" defer></script>
 <script src="{{ 'configurateur.js' | asset_url }}" defer></script>
 <script src="{{ 'configurateur-phase1.js' | asset_url }}" defer></script>
+<script src="{{ 'text-shape-warp.js' | asset_url }}" defer></script>
 <script src="{{ 'configurateur-phase2.js' | asset_url }}" defer></script>
 <script src="{{ 'text-advanced-controls.js' | asset_url }}" defer></script>
 <script src="{{ 'text-floating-actions.js' | asset_url }}" defer></script>
@@ -138,27 +139,64 @@
       
       <!-- GAUCHE : Sidebar Simplifiée -->
       <div class="editor-sidebar-container">
-        
-        <!-- Barre verticale d'icônes (4 onglets seulement) -->
+
+        <!-- Barre verticale d'icônes -->
         <div class="sidebar-icons-nav">
           <button class="nav-icon-btn active" data-tab="tab-upload" type="button" title="Upload">
-            <span class="btn-icon">📤</span>
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </span>
             <span class="btn-label">Upload</span>
           </button>
+
           <button class="nav-icon-btn" data-tab="tab-text" type="button" title="Texte">
-            <span class="btn-icon">Aa</span>
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                <line x1="9" y1="20" x2="15" y2="20"></line>
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+              </svg>
+            </span>
             <span class="btn-label">Texte</span>
           </button>
+
           <button class="nav-icon-btn" data-tab="tab-cliparts" type="button" title="Cliparts">
-            <span class="btn-icon">🎨</span>
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <circle cx="9" cy="10" r="1.2" fill="currentColor"></circle>
+                <circle cx="15" cy="9" r="1.2" fill="currentColor"></circle>
+                <path d="M8 14c1.2 1.6 2.6 2.4 4 2.4s2.8-.8 4-2.4"></path>
+              </svg>
+            </span>
             <span class="btn-label">Arts</span>
           </button>
-          <button class="nav-icon-btn" data-tab="tab-shapes" type="button" title="Formes">
-            <span class="btn-icon">🔷</span>
+
+          {% comment %} <button class="nav-icon-btn" data-tab="tab-shapes" type="button" title="Formes">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <circle cx="17.5" cy="6.5" r="3.5"></circle>
+                <polygon points="3 21 9 13 15 21"></polygon>
+              </svg>
+            </span>
             <span class="btn-label">Formes</span>
-          </button>
+          </button> {% endcomment %}
+
           <button class="nav-icon-btn" data-tab="tab-colors" type="button" title="Couleurs">
-            <span class="btn-icon">🎨</span>
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21a9 9 0 100-18 9 8 0 000 18z"></path>
+                <circle cx="7.5" cy="11.5" r="1.3" fill="currentColor" stroke="none"></circle>
+                <circle cx="12" cy="7.5" r="1.3" fill="currentColor" stroke="none"></circle>
+                <circle cx="16.5" cy="11.5" r="1.3" fill="currentColor" stroke="none"></circle>
+                <circle cx="12" cy="16" r="1.3" fill="currentColor" stroke="none"></circle>
+              </svg>
+            </span>
             <span class="btn-label">Couleurs</span>
           </button>
         </div>
@@ -199,156 +237,152 @@
             </div>
           </div>
 
-          <!-- 2. Onglet TEXTE (Style CustomInk) -->
+          <!-- 2. Onglet TEXTE -->
           <div class="tab-panel" id="tab-text">
-            
-            <!-- Zone d'écriture type CustomInk -->
-            <div class="customink-text-entry">
-              <label class="form-label">Entrez votre texte ici :</label>
-              <textarea id="text-input" class="customink-textarea" placeholder="Tapez votre texte...">papa</textarea>
+
+            <!-- ÉTAT 1 : Saisie initiale (visible par défaut) -->
+            <div id="text-add-section">
+              <input
+                type="text"
+                id="text-input"
+                class="text-add-input"
+                placeholder="Saisir votre texte ici"
+              />
               <button class="btn btn-primary btn-full" id="btn-add-text" type="button">
-                ➕ Ajouter au design
+                Ajouter au Design
               </button>
             </div>
 
-            <!-- Panneau de contrôle des options -->
-            <div class="text-controls-panel">
-              
-              <!-- 1. Font Selection -->
-              <div class="control-row">
-                <label class="control-label">Police d'écriture</label>
-                <div class="font-selector-wrapper">
-                  <select id="text-font" class="font-select">
-                    <option value="Arial" selected>Arial</option>
-                    <option value="Helvetica">Helvetica</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Verdana">Verdana</option>
-                    <option value="Impact">Impact</option>
-                    <option value="Comic Sans MS">Comic Sans MS</option>
-                    <option value="Brush Script MT">Brush Script MT</option>
+            <!-- ÉTAT 2 : Options d'édition (masqué jusqu'à sélection d'un texte) -->
+            <div id="text-edit-section" style="display: none;">
+
+              <input type="text" id="text-input-edit" class="text-add-input"
+                placeholder="Modifier le texte" style="margin-bottom: 1.2rem;" />
+
+              <!-- Changer le font -->
+              <div class="text-edit-row">
+                <span class="text-edit-label">Changer le font</span>
+                <button id="btn-open-font-picker" type="button" class="text-edit-select text-font-trigger">
+                  <span id="font-picker-label">Arial</span>
+                  <span style="margin-left: auto; font-size: 0.7rem; color: #888;">▼</span>
+                </button>
+              </div>
+
+              <!-- Panneau de sélection de police (masqué par défaut) -->
+              <div id="font-picker-panel" style="display: none; margin-top: 0.5rem; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.15); position: relative; z-index: 100;">
+                <!-- Header -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-bottom: 1px solid #eee;">
+                  <button id="btn-font-back" type="button" style="background:none; border:none; cursor:pointer; font-size: 1rem; color:#333;">‹</button>
+                  <span style="font-weight: 600; font-size: 0.9rem;">Polices</span>
+                  <button id="btn-font-close" type="button" style="background:none; border:none; cursor:pointer; font-size: 1.1rem; color:#333;">✕</button>
+                </div>
+                <!-- Recherche -->
+                <div style="padding: 0.6rem 1rem; border-bottom: 1px solid #eee;">
+                  <input id="font-search-input" type="text" placeholder="Rechercher une police..." 
+                        style="width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;" />
+                </div>
+                <!-- Liste avec aperçu -->
+                <div id="font-picker-list" style="max-height: 320px; overflow-y: auto;"></div>
+              </div>
+
+              <!-- Éditer la couleur -->
+              <div class="text-edit-row">
+                <span class="text-edit-label">Éditer la couleur</span>
+                <div class="text-color-row">
+                  <span id="text-color-label">Noir</span>
+                  <input type="color" id="text-color-picker" value="#000000" class="text-color-picker">
+                </div>
+              </div>
+
+              <!-- Rotation -->
+              <div class="text-edit-row">
+                <span class="text-edit-label">Rotation</span>
+                <div class="text-rotation-row">
+                  <input type="range" id="text-rotation-slider" min="0" max="360" value="0" class="text-rotation-slider">
+                  <input type="number" id="text-rotation-value" value="0" min="0" max="360" class="text-rotation-num">
+                </div>
+              </div>
+
+              <!-- Contour -->
+              <div class="text-edit-row text-edit-row--toggle" id="text-outline-toggle">
+                <span class="text-edit-label">Contour</span>
+                <span class="text-edit-expand">sélectionner le contour ›</span>
+              </div>
+              <div id="text-outline-options" class="text-expand-panel" style="display: none;">
+                <div class="text-expand-inner">
+                  <label class="text-expand-sublabel">Couleur</label>
+                  <select id="text-outline-color" class="text-edit-select">
+                    <option value="none">Aucun</option>
+                    <option value="#000000">Noir</option>
+                    <option value="#ffffff">Blanc</option>
+                    <option value="#FF0000">Rouge</option>
+                    <option value="#0000FF">Bleu</option>
+                    <option value="#FFFF00">Jaune</option>
+                    <option value="#FFA500">Orange</option>
                   </select>
+                  <label class="text-expand-sublabel" style="margin-top: 0.5rem;">Épaisseur</label>
+                  <input type="range" id="text-outline-width" min="0" max="10" value="0" class="text-rotation-slider">
                 </div>
               </div>
 
-              <!-- 2. Color Selection (Palette compacte) -->
-              <div class="control-row">
-                <label class="control-label">Couleur du texte</label>
-                <div class="compact-palette" id="text-color-palette">
-                  <button class="palette-color active" data-color="#000000" style="background: #000000;" title="Noir" type="button"></button>
-                  <button class="palette-color" data-color="#FFFFFF" style="background: #FFFFFF; border: 1px solid #ddd;" title="Blanc" type="button"></button>
-                  <button class="palette-color" data-color="#FF0000" style="background: #FF0000;" title="Rouge" type="button"></button>
-                  <button class="palette-color" data-color="#0000FF" style="background: #0000FF;" title="Bleu" type="button"></button>
-                  <button class="palette-color" data-color="#008000" style="background: #008000;" title="Vert" type="button"></button>
-                  <button class="palette-color" data-color="#FFFF00" style="background: #FFFF00;" title="Jaune" type="button"></button>
-                  <button class="palette-color" data-color="#FFA500" style="background: #FFA500;" title="Orange" type="button"></button>
-                  <button class="palette-color" data-color="#800080" style="background: #800080;" title="Violet" type="button"></button>
+              <!-- Forme du texte -->
+              <div class="text-edit-row text-edit-row--toggle" id="text-shape-toggle">
+                <span class="text-edit-label">Forme du texte</span>
+                <span class="text-edit-expand">sélectionner la forme ›</span>
+              </div>
+              <div id="text-shape-options" class="text-expand-panel" style="display: none;">
+                <!-- Rempli dynamiquement par text-shape-warp.js -->
+              </div>
+
+              <!-- Taille du texte -->
+              <div class="text-edit-row">
+                <span class="text-edit-label">Taille du texte</span>
+                <div class="input-with-unit" style="width: 80px;">
+                  <input type="number" id="text-size-value" min="8" max="200" value="40">
+                  <span>px</span>
                 </div>
               </div>
 
-              <!-- 3. Size & Rotation -->
-              <div class="control-grid-2">
-                <div class="control-row">
-                  <label class="control-label">Taille</label>
-                  <div class="input-with-unit">
-                    <input type="number" id="text-size-value" value="48" min="10" max="200">
-                    <span>px</span>
-                  </div>
-                </div>
-                <div class="control-row">
-                  <label class="control-label">Rotation</label>
-                  <div class="input-with-unit">
-                    <input type="number" id="text-rotation-value" value="0" min="-180" max="180">
-                    <span>°</span>
-                  </div>
-                </div>
+              {% comment %} <!-- Centrer -->
+              <div class="text-edit-row">
+                <span class="text-edit-label">Centrer</span>
+                <button id="btn-text-center" type="button" class="btn btn-secondary btn-sm">⊕ Centrer</button>
               </div>
 
-              <!-- Slider de secours (masqué mais utilisé par le script) -->
+              <!-- Alignement -->
+              <div class="text-edit-row">
+                <span class="text-edit-label">Alignement</span>
+                <div class="btn-group">
+                  <button class="tool-btn" id="btn-text-align-left" title="Gauche" type="button">▤</button>
+                  <button class="tool-btn active" id="btn-text-align-center" title="Centre" type="button">▥</button>
+                  <button class="tool-btn" id="btn-text-align-right" title="Droite" type="button">▧</button>
+                </div>
+              </div> {% endcomment %}
+
+              <!-- Slider masqué pour compatibilité JS -->
               <input type="range" id="text-size-slider" style="display:none;" min="10" max="200" value="48">
-              <input type="range" id="text-rotation-slider" style="display:none;" min="-180" max="180" value="0">
 
-              <!-- 4. Style (B, I, U) + Alignement -->
-              <div class="control-row">
-                <label class="control-label">Style & Alignement</label>
-                <div class="toolbar-group">
-                  <div class="btn-group">
-                    <button class="tool-btn" id="btn-text-bold" title="Gras" type="button"><b>B</b></button>
-                    <button class="tool-btn" id="btn-text-italic" title="Italique" type="button"><i>I</i></button>
-                  </div>
-                  <div class="btn-group">
-                    <button class="tool-btn" id="btn-text-align-left" title="Gauche" type="button">▤</button>
-                    <button class="tool-btn" id="btn-text-align-center" title="Centre" type="button">▥</button>
-                    <button class="tool-btn" id="btn-text-align-right" title="Droite" type="button">▧</button>
-                  </div>
-                </div>
+              <!-- Bouton Sauvegarder -->
+              <div class="text-edit-row" style="margin-top: 1.5rem;">
+                <button id="btn-save-text" type="button" class="btn btn-primary btn-full">
+                  💾 Sauvegarder le texte
+                </button>
               </div>
 
-              <!-- 5. Actions rapides -->
-              <div class="control-row">
-                <div class="quick-actions">
-                  <button class="btn btn-secondary btn-sm" id="btn-text-center" type="button">🎯 Centrer</button>
-                  <button class="btn btn-secondary btn-sm" id="btn-text-duplicate" type="button">👯 Dupliquer</button>
-                </div>
-              </div>
+            </div><!-- /text-edit-section -->
 
-            </div>
+
           </div>
 
           <!-- 3. Onglet MOTIFS -->
           <div class="tab-panel" id="tab-cliparts">
-            <div class="form-group">
-              <label class="form-label">Catégorie</label>
-              <select id="clipart-category" class="form-input">
-                <option value="Formes">Formes</option>
-                <option value="Symboles">Symboles</option>
-                <option value="Musique">Musique</option>
-                <option value="Sport">Sport</option>
-                <option value="Gaming">Gaming</option>
-                <option value="Animaux">Animaux</option>
-              </select>
+            <div class="clipart-breadcrumb" id="clipart-breadcrumb" style="display: none;">
+              <button class="clipart-back-btn" id="clipart-back-btn" type="button">‹ Retour</button>
+              <span class="clipart-breadcrumb-title" id="clipart-breadcrumb-title"></span>
             </div>
-
-            <div class="clipart-grid" id="clipart-grid" style="margin-top: 1rem;">
-              <button class="clipart-item" data-emoji="⭐" data-name="Étoile" title="Étoile" type="button">⭐</button>
-              <button class="clipart-item" data-emoji="❤️" data-name="Cœur" title="Cœur" type="button">❤️</button>
-              <button class="clipart-item" data-emoji="🌟" data-name="Étoile brillante" title="Étoile brillante" type="button">🌟</button>
-              <button class="clipart-item" data-emoji="💎" data-name="Diamant" title="Diamant" type="button">💎</button>
-            </div>
-          </div>
-
-          <!-- 4. Onglet FORMES -->
-          <div class="tab-panel" id="tab-shapes">
-            <div class="phase2-shape-controls">
-              <div class="form-group">
-                <label class="form-label">Formes géométriques</label>
-                <div class="shape-buttons">
-                  <button class="btn-shape" data-shape="rect" title="Rectangle" type="button">▭</button>
-                  <button class="btn-shape" data-shape="circle" title="Cercle" type="button">●</button>
-                  <button class="btn-shape" data-shape="triangle" title="Triangle" type="button">▲</button>
-                  <button class="btn-shape" data-shape="star" title="Étoile" type="button">⭐</button>
-                  <button class="btn-shape" data-shape="line" title="Ligne" type="button">─</button>
-                </div>
-              </div>
-
-              <div id="shape-options" style="display: none; margin-top: 1rem;">
-                <div class="form-group">
-                  <label class="form-label" for="shape-stroke-color">Couleur du contour</label>
-                  <input type="color" id="shape-stroke-color" class="form-input" value="#000000">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="shape-fill-color">Couleur de remplissage</label>
-                  <input type="color" id="shape-fill-color" class="form-input" value="#ffffff">
-                  <button class="btn btn-secondary btn-sm" id="btn-no-fill" type="button" style="margin-top: 0.5rem;">
-                    Sans remplissage
-                  </button>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="shape-stroke-width">Épaisseur du contour (<span id="stroke-width-value">2</span>px)</label>
-                  <input type="range" id="shape-stroke-width" class="form-range" min="1" max="20" value="2">
-                </div>
-              </div>
-            </div>
+            <div class="clipart-category-grid" id="clipart-category-grid"></div>
+            <div class="clipart-category-grid" id="clipart-subcategory-grid" style="display: none;"></div>
+            <div class="clipart-grid" id="clipart-grid" style="display: none;"></div>
           </div>
 
           <!-- 5. Onglet COULEURS -->
@@ -458,6 +492,8 @@
           </div>
 
         </div>
+
+
       </div>
 
       <!-- CENTRE : Espace de travail du Canvas -->
@@ -481,12 +517,48 @@
           </button>
         </div>
 
+        <!-- CONTRÔLE D'OPACITÉ FLOTTANT (apparaît seulement quand un objet est sélectionné) -->
+        <div id="panel-opacity" class="floating-opacity-control" style="display: none;">
+          <span class="opacity-icon">🔍</span>
+          <span class="opacity-label">Opacité</span>
+          <input type="range" id="global-opacity-slider" min="0" max="100" value="100" class="opacity-slider">
+          <input type="number" id="global-opacity-value" value="100" min="0" max="100" class="opacity-number">
+          <span class="opacity-percent">%</span>
+        </div>
+
         <div class="canvas-wrapper">
           <canvas id="customization-canvas"></canvas>
           <div class="canvas-loader" id="canvas-loader" style="display: none;">
             <div class="spinner"></div>
             <p>Chargement...</p>
           </div>
+        </div>
+
+
+        <!-- Boutons Zoom flottants -->
+        <div class="zoom-controls">
+          <button class="zoom-btn" id="btn-zoom-out" type="button" title="Dézoomer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </button>
+          <span class="zoom-level" id="zoom-level-label">100%</span>
+          <button class="zoom-btn" id="btn-zoom-in" type="button" title="Zoomer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </button>
+          <button class="zoom-btn zoom-reset" id="btn-zoom-reset" type="button" title="Réinitialiser le zoom">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7v6h6"></path>
+              <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+            </svg>
+          </button>
         </div>
         
         <!-- DROITE : Sélecteur de vues flottant avec vignettes -->
@@ -557,25 +629,25 @@
             <div class="preview-view-item">
               <h3 class="preview-view-label">Face</h3>
               <div class="preview-image-container">
-                <img id="preview-img-front" src="" alt="Face" class="preview-image">
+                <img id="preview-img-front" src="" alt="Face" class="preview-image" width="200" height="200">
               </div>
             </div>
             <div class="preview-view-item">
               <h3 class="preview-view-label">Dos</h3>
               <div class="preview-image-container">
-                <img id="preview-img-back" src="" alt="Dos" class="preview-image">
+                <img id="preview-img-back" src="" alt="Dos" class="preview-image" width="200" height="200">
               </div>
             </div>
             <div class="preview-view-item">
               <h3 class="preview-view-label">Côté Gauche</h3>
               <div class="preview-image-container">
-                <img id="preview-img-left" src="" alt="Gauche" class="preview-image">
+                <img id="preview-img-left" src="" alt="Gauche" class="preview-image" width="200" height="200">
               </div>
             </div>
             <div class="preview-view-item">
               <h3 class="preview-view-label">Côté Droit</h3>
               <div class="preview-image-container">
-                <img id="preview-img-right" src="" alt="Droite" class="preview-image">
+                <img id="preview-img-right" src="" alt="Droite" class="preview-image" width="200" height="200">
               </div>
             </div>
           </div>

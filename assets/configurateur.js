@@ -56,6 +56,7 @@
 
     // Canvas Fabric.js
     fabricCanvas: null,
+    
 
     // Stockage des designs par vue (JSON sérialisé Fabric.js)
     viewsData: {
@@ -64,6 +65,7 @@
       left:  { objects: [] },
       right: { objects: [] },
     },
+
 
     // Zones éditables par vue (depuis les metafields Shopify)
     editableZones: {
@@ -98,7 +100,16 @@
     
     // 🔥 Flag pour éviter les sauvegardes pendant le chargement de vue
     _isLoadingView: false,
+
+    // ✅ on ajoute directement les propriétés de zoom ici comme propriétés normales
+    userZoom: 1,
+    baseScale: 1,
   };
+
+  // ✅ et les constantes en dehors, au niveau du module
+  const ZOOM_MIN = 0.5;
+  const ZOOM_MAX = 2.5;
+  const ZOOM_STEP = 0.1;
 
   // ══════════════════════════════════════════════════════════════════════════════
   // UTILITAIRES
@@ -237,6 +248,7 @@
     // Action : supprime l'objet du canvas (délègue à CanvasManager pour rester cohérent
     // avec le bouton "btn-delete-selected" déjà existant)
     deleteObjectHandler(eventData, transform) {
+      console.log('[CustomControls] deleteObjectHandler appelé', transform.target);
       const target = transform.target;
       const canvas = target.canvas;
       canvas.setActiveObject(target);
@@ -246,6 +258,7 @@
 
     // Action : duplique l'objet et sélectionne le clone
     cloneObjectHandler(eventData, transform) {
+      console.log('[CustomControls] cloneObjectHandler appelé', transform.target);
       CanvasManager.duplicateSelected(transform.target);
       return true;
     },
@@ -262,8 +275,9 @@
       const Control = fabric.Control;
 
       // Décalage en pixels appliqué à chaque icône, vers l'extérieur du coin,
-      // pour qu'elle soit nettement détachée du cadre de sélection (cf. capture d'écran).
-      const OFFSET = 60;
+      // pour qu'elle soit nettement détachée du cadre de sélection.
+      // Valeur réduite de 60 à 40 pour rapprocher les icônes du cadre
+      const OFFSET = 0;
 
       // IMPORTANT : offsetX/offsetY ne déplacent QUE le rendu visuel de l'icône
       // (utilisé par render() via ctx.translate). Ils n'affectent PAS la zone de
@@ -356,12 +370,13 @@
       });
 
       // Style de la bounding box (ligne bleue fine, pas de coins carrés par défaut)
+      // Padding et borderScaleFactor réduits pour un cadre plus proche de l'objet
       fabric.Object.prototype.set({
         transparentCorners: true,
         borderColor: '#2f6fed',
         cornerColor: 'rgba(0,0,0,0)', // invisible, on dessine nos propres icônes
-        borderScaleFactor: 1.5,
-        padding: 0,
+        borderScaleFactor: 1,          // Réduit de 1.5 à 1 pour une ligne plus fine
+        padding: 0,                    // Padding réduit pour cadre plus serré
       });
 
       Utils.log('[CustomControls] Contrôles 4-coins installés.');
@@ -409,6 +424,8 @@
       this.setupCanvasEvents();
       this.setupViewTabs();
 
+      this.setupZoomControls();
+
       // Charger la vue initiale (Front)
       this.loadView('front');
 
@@ -426,34 +443,48 @@
       const wrapper   = document.querySelector('.canvas-workspace .canvas-wrapper');
       if (!workspace || !wrapper) return;
 
-      const padding     = 48; // var(--spacing-lg) × 2 = 2rem × 2 = 32px, on prend 48 pour confort
-      const availH      = workspace.clientHeight - padding;
-      const availW      = workspace.clientWidth  - padding - 90; // 90 = sélecteur vues flottant
+      const padding = 48;
+      const availH  = workspace.clientHeight - padding;
+      const availW  = workspace.clientWidth  - padding - 90;
       if (availH <= 0 || availW <= 0) return;
 
-      // Ratio interne du canvas Fabric.js (800×600 = 4:3)
-      const ratio   = CONFIG.CANVAS_WIDTH / CONFIG.CANVAS_HEIGHT;
-      let   dispH   = availH;
-      let   dispW   = dispH * ratio;
+      const ratio = CONFIG.CANVAS_WIDTH / CONFIG.CANVAS_HEIGHT;
+      let dispH = availH;
+      let dispW = dispH * ratio;
       if (dispW > availW) {
         dispW = availW;
         dispH = dispW / ratio;
       }
 
-      // Appliquer via CSS transform sur le wrapper (ne touche pas les coords internes)
-      const scale = dispW / CONFIG.CANVAS_WIDTH;
+      const baseScale = dispW / CONFIG.CANVAS_WIDTH;
+      AppState.baseScale = baseScale; // ← on garde le scale "fit" en mémoire
+
+      this.applyZoom(); // ← applique baseScale * userZoom
+
+      wrapper.style.width  = `${dispW * AppState.userZoom}px`;
+      wrapper.style.height = `${dispH * AppState.userZoom}px`;
+
+      Utils.log(`Canvas redimensionné : base=${baseScale.toFixed(3)} userZoom=${AppState.userZoom}`);
+    },
+
+    // Applique le scale final (base × zoom utilisateur) sur le wrapper Fabric
+    applyZoom() {
+      const wrapper = document.querySelector('.canvas-workspace .canvas-wrapper');
+      if (!wrapper) return;
       const fabricWrap = wrapper.querySelector('.canvas-container') || wrapper;
-      if (fabricWrap) {
-        fabricWrap.style.transform        = `scale(${scale})`;
-        fabricWrap.style.transformOrigin  = 'top center';
+      const finalScale = AppState.baseScale * AppState.userZoom;
+      fabricWrap.style.transform       = `scale(${finalScale})`;
+      fabricWrap.style.transformOrigin = 'center center';
+
+      const label = document.getElementById('zoom-level-label');
+      if (label) label.textContent = `${Math.round(AppState.userZoom * 100)}%`;
+
+      // Force Fabric à recalculer son offset interne après le changement de scale CSS
+      if (AppState.fabricCanvas) {
+        requestAnimationFrame(() => {
+          AppState.fabricCanvas.calcOffset();
+        });
       }
-
-      // Ajuster la taille du wrapper pour que les éléments autour s'alignent
-      wrapper.style.width  = `${dispW}px`;
-      wrapper.style.height = `${dispH}px`;
-      wrapper.style.overflow = 'visible';
-
-      Utils.log(`Canvas redimensionné : ${dispW.toFixed(0)}×${dispH.toFixed(0)}px (scale=${scale.toFixed(3)})`);
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -527,6 +558,31 @@
           this.hideZoneGuides();
         }
       });
+    },
+
+
+    setupZoomControls() {
+      const btnIn    = document.getElementById('btn-zoom-in');
+      const btnOut   = document.getElementById('btn-zoom-out');
+      const btnReset = document.getElementById('btn-zoom-reset');
+      const wrapper  = document.querySelector('.canvas-workspace .canvas-wrapper');
+
+      const setZoom = (value) => {
+        AppState.userZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
+        this.resizeCanvasToWorkspace();
+      };
+
+      btnIn?.addEventListener('click', () => setZoom(AppState.userZoom + ZOOM_STEP));
+      btnOut?.addEventListener('click', () => setZoom(AppState.userZoom - ZOOM_STEP));
+      btnReset?.addEventListener('click', () => setZoom(1));
+
+      // Zoom à la molette (Ctrl/Cmd + scroll), pour rester cohérent avec le comportement navigateur
+      wrapper?.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+        setZoom(AppState.userZoom + delta);
+      }, { passive: false });
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -881,18 +937,18 @@
       return this.resolveZone(zone, v);
     },
 
-    _makeClipRect(view) {
-      const zone = this._getActiveZone(view || AppState.currentView);
-      if (!zone) return null;
-      const resolvedZone = this.resolveZone(zone, view);
-      return new fabric.Rect({
-        left: resolvedZone.x,
-        top: resolvedZone.y,
-        width: resolvedZone.w,
-        height: resolvedZone.h,
-        absolutePositioned: true, // coordonnées absolues dans le canvas
-      });
-    },
+    // _makeClipRect(view) {
+    //   const zone = this._getActiveZone(view || AppState.currentView);
+    //   if (!zone) return null;
+    //   const resolvedZone = this.resolveZone(zone, view);
+    //   return new fabric.Rect({
+    //     left: resolvedZone.x,
+    //     top: resolvedZone.y,
+    //     width: resolvedZone.w,
+    //     height: resolvedZone.h,
+    //     absolutePositioned: true, // coordonnées absolues dans le canvas
+    //   });
+    // },
 
     // ─────────────────────────────────────────────────────────────────────────
     // SAUVEGARDE DE LA VUE COURANTE
@@ -1091,10 +1147,12 @@
         AppState.fabricCanvas.setActiveObject(img);
         AppState.fabricCanvas.requestRenderAll();
 
-        if (window.ObjectFloatingActions) {
-          window.ObjectFloatingActions.applyObjectDefaults(img);
-          window.ObjectFloatingActions.show(img);
-        }
+        // Activer les contrôles personnalisés
+        img.set({
+          hasControls: true,
+          hasBorders: true,
+          lockScalingFlip: true
+        });
 
         Utils.toggleCanvasLoader(false);
         Utils.log('Image ajoutée au canvas');
@@ -1132,6 +1190,9 @@
           left: source.left + 20,
           top: source.top + 20,
           evented: true,
+          hasControls: true,
+          hasBorders: true,
+          lockScalingFlip: true
         });
         canvas.add(cloned);
         canvas.setActiveObject(cloned);
@@ -1738,7 +1799,6 @@
         'group-upload': 'tab-upload',
         'group-text': 'tab-text',
         'group-cliparts': 'tab-cliparts',
-        'group-shapes': 'tab-shapes',
         'group-layers': 'tab-layers',
         'group-devis': 'tab-devis',
         'group-help': 'tab-help'
@@ -1761,11 +1821,11 @@
       if (!e.selected || !e.selected[0]) return;
       const obj = e.selected[0];
 
-      if (obj.type === 'i-text') {
+      if (obj.type === 'i-text' || obj.isWarpImage) {
         this.openSection('group-text');
       } else if (['rect', 'circle', 'triangle', 'polygon', 'line'].includes(obj.type)) {
-        this.openSection('group-shapes');
-      } else if (obj.type === 'image') {
+        this.openSection('group-layers');
+      } else if (obj.type === 'image' && !obj.isWarpImage) {
         this.openSection('group-upload');
       } else if (obj.type === 'text') { // Pour les cliparts (emojis)
         this.openSection('group-cliparts');

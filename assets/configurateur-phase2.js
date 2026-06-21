@@ -140,17 +140,16 @@
           CanvasManager.applyClipPath(shape);
         }
 
-        if (window.ObjectFloatingActions) {
-          window.ObjectFloatingActions.applyObjectDefaults(shape);
-        }
+        // Activer les contrôles personnalisés
+        shape.set({
+          hasControls: true,
+          hasBorders: true,
+          lockScalingFlip: true
+        });
 
         AppState.fabricCanvas.add(shape);
         AppState.fabricCanvas.setActiveObject(shape);
         AppState.fabricCanvas.renderAll();
-
-        if (window.ObjectFloatingActions) {
-          window.ObjectFloatingActions.show(shape);
-        }
 
         // Sauvegarder dans l'historique
         if (window.HistoryManager) window.HistoryManager.saveState();
@@ -295,7 +294,10 @@
         activeObject.clone((cloned) => {
           cloned.set({
             left: activeObject.left + 20,
-            top: activeObject.top + 20
+            top: activeObject.top + 20,
+            hasControls: true,
+            hasBorders: true,
+            lockScalingFlip: true
           });
 
           // Appliquer le clipping mask

@@ -815,7 +815,7 @@
   height: 64px;
   background: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   color: #808080;
   display: flex;
   flex-direction: column;
@@ -847,13 +847,15 @@
 }
 
 .nav-icon-btn.active {
-  background: #ffffff;
-  color: #111111;
+  background: #111111;
+  color: #ffffff;
   transform: translateX(4px);
 }
 
 .nav-icon-btn.active::before {
   height: 32px;
+  background: #2563eb;
+  width: 4px;
 }
 
 .nav-icon-btn .btn-icon {
@@ -1183,19 +1185,216 @@
   color: #999999;
 }
 
+
+/* CONTRÔLE D'OPACITÉ FLOTTANT (au-dessus du canvas) */
+.floating-opacity-control {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  z-index: 15;
+  min-width: 300px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.opacity-icon {
+  font-size: 16px;
+}
+
+.opacity-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.opacity-slider {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.opacity-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+}
+
+.opacity-slider::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+}
+
+.opacity-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.opacity-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+}
+
+.opacity-slider::-moz-range-thumb:active {
+  transform: scale(1.1);
+}
+
+.opacity-number {
+  width: 50px;
+  padding: 6px 8px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: white;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.opacity-number:focus {
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+}
+
+.opacity-percent {
+  font-size: 14px;
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+
+/* Contrôles de zoom flottants, centrés en bas du canvas */
+.zoom-controls {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+
+  /* ✅ Masqué par défaut, apparait seulement au survol de l'image */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* ✅ Affichage au survol du wrapper (l'image du produit) */
+.canvas-wrapper:hover .zoom-controls,
+.canvas-wrapper:focus-within .zoom-controls {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #333333;
+  transition: background 0.15s ease;
+}
+
+.zoom-btn:hover {
+  background: #f0f0f0;
+}
+
+.zoom-level {
+  min-width: 42px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333333;
+  user-select: none;
+}
+
+.zoom-reset {
+  border-left: 1px solid #e0e0e0;
+  padding-left: 6px;
+  margin-left: 2px;
+}
+
+@media (max-width: 768px) {
+  .zoom-controls { bottom: 0.75rem; padding: 4px 8px; }
+  .zoom-btn { width: 28px; height: 28px; }
+}
+
+
 /* Boutons flottants aux 4 coins (style Custom Ink) — texte, formes, images */
 .object-floating-actions,
 .text-floating-actions {
-  position: absolute;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
   pointer-events: none;
   z-index: 30;
   display: none;
-  box-sizing: border-box;
 }
 
 .ofa-btn,
 .tfa-btn {
-  position: absolute;
+  position: fixed;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -1206,6 +1405,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  transform: translate(-50%, -50%);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   padding: 0;
   z-index: 31;
@@ -1220,8 +1420,6 @@
 /* Coin haut-gauche : Supprimer */
 .ofa-delete,
 .tfa-delete {
-  top: 0;
-  left: 0;
   transform: translate(-50%, -50%);
   background: #ef4444;
   color: #ffffff;
@@ -1272,7 +1470,7 @@
   box-shadow: none; /* Pas d'ombre */
   border-radius: var(--border-radius-sm);
   min-height: auto;
-  overflow: visible;
+  overflow: hidden;
   /* Prendre toute la hauteur disponible */
   height: 100%;
   align-self: stretch;
@@ -1355,20 +1553,93 @@
     flex-direction: column;
   }
   
+  /* Barre d'icônes moderne */
   .sidebar-icons-nav {
-    width: 100%;
-    min-width: 100%;
-    height: auto;
-    flex-direction: row;
-    justify-content: space-around;
-    padding: 0.5rem;
-    overflow-x: auto;
+    width: 84px;
+    min-width: 84px;
+    background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0;
+    gap: 0.6rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
   }
-  
+
   .nav-icon-btn {
-    width: auto;
-    height: 50px;
-    padding: 0 10px;
+    width: 64px;
+    height: 68px;
+    background: transparent;
+    border: none;
+    border-radius: 14px;
+    color: #9a9aa3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 6px 4px;
+    position: relative;
+  }
+
+  .nav-icon-btn .btn-icon svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-icon-btn .btn-icon {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-icon-btn .btn-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    transition: color 0.25s ease;
+  }
+
+  /* Liseré lumineux à gauche, façon "indicateur de marque" */
+  .nav-icon-btn::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: linear-gradient(180deg, #4F46E5 0%, #7C3AED 100%);
+    border-radius: 0 4px 4px 0;
+    transition: height 0.25s ease;
+  }
+
+  .nav-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+  }
+
+  .nav-icon-btn:hover .btn-icon svg {
+    transform: translateY(-1px);
+  }
+
+  .nav-icon-btn.active {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.18) 0%, rgba(124, 58, 237, 0.18) 100%);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.35);
+  }
+
+  .nav-icon-btn.active::before {
+    height: 30px;
+  }
+
+  .nav-icon-btn.active .btn-label {
+    color: #c4b5fd;
   }
   
   .sidebar-tabs-content {
@@ -1392,6 +1663,28 @@
   .history-btn {
     width: 60px;
     height: 50px;
+  }
+  
+  /* Contrôle d'opacité en haut sur mobile */
+  .floating-opacity-control {
+    top: 1rem;
+    min-width: 250px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  
+  .opacity-label {
+    display: none; /* Masquer le label sur mobile pour gagner de l'espace */
+  }
+  
+  .opacity-slider {
+    flex: 1;
+  }
+  
+  .opacity-number {
+    width: 45px;
+    padding: 4px 6px;
+    font-size: 13px;
   }
   
   .floating-view-selector {
@@ -2475,4 +2768,199 @@
 
 .form-range::-moz-range-thumb:hover {
   transform: scale(1.2);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PANNEAU TEXTE — DEUX ÉTATS
+══════════════════════════════════════════════════════════════════════════════ */
+
+/* Champ de saisie (état 1 et 2) */
+.text-add-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #111;
+  background: #fff;
+  box-sizing: border-box;
+  margin-bottom: 0.75rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.text-add-input:focus {
+  border-color: #000;
+  outline: none;
+}
+
+/* Ligne d'option (label + contrôle) */
+.text-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eeeeee;
+  gap: 0.75rem;
+}
+.text-edit-row--toggle {
+  cursor: pointer;
+}
+.text-edit-row--toggle:hover .text-edit-expand {
+  color: #000;
+}
+
+.text-edit-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #222;
+  white-space: nowrap;
+  min-width: 105px;
+}
+
+.text-edit-expand {
+  font-size: 0.82rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+/* Select font */
+.text-edit-select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  background: #fff;
+  max-width: 140px;
+}
+
+/* Couleur : label + color picker */
+.text-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #444;
+}
+.text-color-picker {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Rotation : slider + champ numérique */
+.text-rotation-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+.text-rotation-slider {
+  flex: 1;
+  accent-color: #000;
+}
+.text-rotation-num {
+  width: 48px;
+  padding: 0.25rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+/* Panneau déroulant (outline / shape) */
+.text-expand-panel {
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+}
+.text-expand-inner {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+.text-expand-sublabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.3rem;
+}
+
+/* Boutons formes du texte */
+.text-shape-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem;
+}
+.text-shape-btn {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: all 0.15s;
+}
+.text-shape-btn:hover,
+.text-shape-btn.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+
+.upload-btn-fake {
+  display: inline-block;
+  background: #3b4cca;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: background 0.2s;
+}
+.upload-btn-fake:hover {
+  background: #2a39b0;
+}
+
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #999;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  width: 80%;
+}
+.upload-divider::before,
+.upload-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
+.upload-drag-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  margin-top: 0.5rem;
+}
+/* ============================================
+   Correctif nav latérale : icône bleue sur l'onglet actif
+   (le fond blanc venait de .btn-icon dans configurateur-phase1.js)
+   ============================================ */
+.nav-icon-btn.active .btn-icon {
+  color: #2563eb;
+}
+
+.nav-icon-btn.active .btn-icon svg {
+  stroke: #2563eb;
 }
