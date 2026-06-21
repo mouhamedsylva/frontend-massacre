@@ -1383,6 +1383,17 @@
         editableZones: Utils.parseEditableZones(cardElement.dataset.editableZones),
       };
 
+      // 🔍 Debug : Afficher les données produit récupérées
+      console.log('[ProductManager] 🔍 Produit sélectionné :');
+      console.log('   id:', productData.id);
+      console.log('   title:', productData.title);
+      console.log('   price:', productData.price, '(type:', typeof productData.price + ')');
+      console.log('   dataset brut:', {
+        productId: cardElement.dataset.productId,
+        productTitle: cardElement.dataset.productTitle,
+        productPrice: cardElement.dataset.productPrice,
+      });
+
       // Validation minimum : l'image Front est obligatoire
       if (!productData.viewImages.front || productData.viewImages.front === '') {
         alert('Ce produit n\'est pas encore configuré. Image de la vue Face manquante.');
@@ -1636,6 +1647,13 @@
           product_price: AppState.selectedProduct.price || "0.00",
           images,
         };
+
+        // 🔍 Debug : Afficher les données produit envoyées
+        console.log('[Submission] 🔍 Données produit envoyées :');
+        console.log('   product_title:', payload.product_title);
+        console.log('   product_price:', payload.product_price, '(type:', typeof payload.product_price + ')');
+        console.log('   product_id:', payload.product_id);
+        console.log('   AppState.selectedProduct:', AppState.selectedProduct);
 
         await this.sendToBackend(payload, form, submitBtn, originalTxt);
 
