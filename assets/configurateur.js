@@ -1520,6 +1520,9 @@
         id:    cardElement.dataset.productId,
         title: cardElement.dataset.productTitle,
         price: cardElement.dataset.productPrice || "0.00",
+        variant_id: cardElement.dataset.variantId
+          ? `gid://shopify/ProductVariant/${cardElement.dataset.variantId}`
+          : null,
         viewImages: {
           front: cardElement.dataset.viewFront,
           back:  cardElement.dataset.viewBack,
@@ -1531,6 +1534,7 @@
 
       // 🔍 Debug : Afficher les données produit récupérées
       console.log('[ProductManager] 🔍 Produit sélectionné :');
+      console.log('   variant_id:', productData.variant_id);
       console.log('   id:', productData.id);
       console.log('   title:', productData.title);
       console.log('   price:', productData.price, '(type:', typeof productData.price + ')');
@@ -1791,6 +1795,7 @@
           product_title: AppState.selectedProduct.title,
           product_id:    AppState.selectedProduct.id,
           product_price: AppState.selectedProduct.price || "0.00",
+          variant_id:    AppState.selectedProduct.variant_id || null,
           images,
         };
 
