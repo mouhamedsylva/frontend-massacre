@@ -90,13 +90,14 @@
 
             <div class="product-card" 
                  data-product-id="{{ product.id }}"
-                 data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+                 data-variant-id="{{ first_variant.id }}"
                  data-product-title="{{ product.title | escape }}"
+                 data-product-price="{{ first_variant.price | divided_by: 100.0 }}"
+                 data-variant-price="{{ first_variant.price | divided_by: 100.0 }}"
                  data-view-front="{{ front_image }}"
                  data-view-back="{{ back_image }}"
                  data-view-left="{{ left_image }}"
                  data-view-right="{{ right_image }}"
-                 data-product-price="{{ product.selected_or_first_available_variant.price | divided_by: 100.0 }}"
                  data-editable-zones="{{ product.metafields.custom.editable_zones | escape }}">
               
               {% if product.featured_image %}

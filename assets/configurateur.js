@@ -1515,13 +1515,16 @@
       });
     },
 
+    
+
     selectProduct(cardElement) {
+      const rawVariantId = cardElement.dataset.variantId;
       const productData = {
         id:    cardElement.dataset.productId,
         title: cardElement.dataset.productTitle,
-        price: cardElement.dataset.productPrice || "0.00",
-        variant_id: cardElement.dataset.variantId
-          ? `gid://shopify/ProductVariant/${cardElement.dataset.variantId}`
+        price: cardElement.dataset.variantPrice || cardElement.dataset.productPrice || "0.00",
+        variant_id: (rawVariantId && rawVariantId !== 'undefined' && rawVariantId !== '' && rawVariantId !== '0')
+          ? `gid://shopify/ProductVariant/${rawVariantId}`
           : null,
         viewImages: {
           front: cardElement.dataset.viewFront,
@@ -1535,13 +1538,19 @@
       // 🔍 Debug : Afficher les données produit récupérées
       console.log('[ProductManager] 🔍 Produit sélectionné :');
       console.log('   variant_id:', productData.variant_id);
+
+      console.log('[ProductManager] 🔍 rawVariantId lu depuis dataset:', rawVariantId);
+      console.log('[ProductManager] 🔍 variant_id construit:', productData.variant_id);
+
       console.log('   id:', productData.id);
       console.log('   title:', productData.title);
       console.log('   price:', productData.price, '(type:', typeof productData.price + ')');
       console.log('   dataset brut:', {
         productId: cardElement.dataset.productId,
         productTitle: cardElement.dataset.productTitle,
+        variantPrice: cardElement.dataset.variantPrice,
         productPrice: cardElement.dataset.productPrice,
+        variantId: cardElement.dataset.variantId,
       });
 
       // Validation minimum : l'image Front est obligatoire
@@ -1803,6 +1812,7 @@
         console.log('[Submission] 🔍 Données produit envoyées :');
         console.log('   product_title:', payload.product_title);
         console.log('   product_price:', payload.product_price, '(type:', typeof payload.product_price + ')');
+        console.log('   variant_id:', payload.variant_id, '(type:', typeof payload.variant_id + ')');
         console.log('   product_id:', payload.product_id);
         console.log('   AppState.selectedProduct:', AppState.selectedProduct);
 
